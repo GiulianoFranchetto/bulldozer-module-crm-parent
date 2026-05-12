@@ -1,0 +1,28 @@
+server:
+  port: 43200
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "https://auth.bulldozer-collective.fr/realms/bdz-saas-dev"
+  application:
+    name: bulldozer-module-crm
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  jackson:
+    default-property-inclusion: non_null
+    datatype:
+      datetime:
+        read-date-timestamps-as-nanoseconds: false
+        write-date-keys-as-timestamps: true
+        write-date-timestamps-as-nanoseconds: false
+        write-dates-as-timestamps: true
+        write-durations-as-timestamps: true
+
+bulldozer:
+  jobs:
+    init-sql: true
