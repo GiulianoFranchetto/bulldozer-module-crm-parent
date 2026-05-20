@@ -81,7 +81,7 @@ public class HubSpotSyncService implements CrmPlatformSyncService {
     public void discoverPipelines(@NonNull UUID customerId,
                                   @NonNull UUID projectId,
                                   @NonNull OAuthToken token) throws Exception {
-        var pipelines = this.hubSpotClient.fetchAllDealPipelines(token.getAccessToken());
+        var pipelines = this.hubSpotClient.fetchAllDealPipelines(token.token());
         for (var hubPipeline : pipelines) {
             var pipelineEntity = this.pipelineUpsertService.upsertPipeline(
                     customerId, projectId, IntegrationPlatform.INTEGRATION_PLATFORM_HUBSPOT,
@@ -105,7 +105,7 @@ public class HubSpotSyncService implements CrmPlatformSyncService {
     public CrmSyncResult sync(@NonNull UUID customerId,
                               @NonNull UUID projectId,
                               @NonNull OAuthToken token) throws Exception {
-        String accessToken = token.getAccessToken();
+        String accessToken = token.token();
         Instant now = Instant.now();
 
         int contactsSynced = syncContacts(customerId, projectId, accessToken, now);

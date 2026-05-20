@@ -45,7 +45,7 @@ public class HubSpotClient {
         String after = null;
         do {
             var builder = UriComponentsBuilder
-                    .fromHttpUrl(BASE_URL + "/crm/v3/objects/" + objectType)
+                    .fromUriString(BASE_URL + "/crm/v3/objects/" + objectType)
                     .queryParam("limit", PAGE_SIZE)
                     .queryParam("properties", String.join(",", properties));
             if (after != null) {
