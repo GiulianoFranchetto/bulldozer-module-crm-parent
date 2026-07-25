@@ -46,6 +46,11 @@
         </dependency>
         <dependency>
             <groupId>bulldozer-collective</groupId>
+            <artifactId>hosting-guard-starter</artifactId>
+            <version>${hosting-guard-starter.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>bulldozer-collective</groupId>
             <artifactId>bulldozer-security</artifactId>
             <version>${bulldozer-security.version}</version>
         </dependency>

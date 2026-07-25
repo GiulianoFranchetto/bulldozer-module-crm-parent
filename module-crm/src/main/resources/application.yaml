@@ -26,3 +26,19 @@ spring:
 bulldozer:
   jobs:
     init-sql: true
+  # Restricts what a token minted by a hosted site's OAuth client may do (hosting-guard-starter).
+  # Uses its own least-privilege Keycloak service account (realm-management:view-clients only).
+  # Flip BDZ_HOSTING_GUARD_ENABLED on once that service account exists and its secret is deployed;
+  # the service logs a warning at startup while it is off.
+  hosting-guard:
+    enabled: ${BDZ_HOSTING_GUARD_ENABLED:false}
+    fail-closed: false
+    cache-ttl: 5m
+    whitelisted-client-ids:
+      - "postman"
+      - "bulldozer-internal-modulith"
+    keycloak:
+      realm: "bdz-saas-dev"
+      url: "https://auth.bulldozer-collective.fr"
+      client-id: "bulldozer-hosting-guard"
+      client-secret: "${BDZ_HOSTING_GUARD_SECRET:}"
