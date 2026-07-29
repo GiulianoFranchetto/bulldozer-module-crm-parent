@@ -2,7 +2,7 @@ spring:
   datasource:
     url: "jdbc:postgresql://bulldozer-database-dev-2.cz4ssickq6pl.eu-west-3.rds.amazonaws.com:5432/dev_bdz_saas_module_crm"
     username: "postgres"
-    password: "CB4CR^&aQ}4J"
+    password: "${DB_PASSWORD}"
 
 logging:
   level:

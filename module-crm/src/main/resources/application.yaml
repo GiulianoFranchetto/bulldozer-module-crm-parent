@@ -37,6 +37,8 @@ bulldozer:
     whitelisted-client-ids:
       - "postman"
       - "bulldozer-internal-modulith"
+      - "bulldozer-os"
+      - "bulldozer-os-admin"
     keycloak:
       realm: "bdz-saas-dev"
       url: "https://auth.bulldozer-collective.fr"
