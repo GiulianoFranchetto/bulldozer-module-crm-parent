@@ -13,6 +13,7 @@ import lombok.Setter;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -23,6 +24,15 @@ public class CrmSyncRunEntity extends ProjectAwareEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private IntegrationPlatform platform;
+
+    /**
+     * Id of the job-library job carrying out this run. Nullable: the run row is written first, and the job is
+     * only created once the enqueue succeeds. The job tables are purged by the job cleaner, so a run older
+     * than the retention window keeps its own status but can no longer be resolved to a job report.
+     */
+    @Nullable
+    @Column
+    private UUID jobId;
 
     @Column(nullable = false)
     private Instant startedAt;

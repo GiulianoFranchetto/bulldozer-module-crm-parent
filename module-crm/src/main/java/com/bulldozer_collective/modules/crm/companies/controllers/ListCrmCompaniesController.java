@@ -1,11 +1,13 @@
 package com.bulldozer_collective.modules.crm.companies.controllers;
 
-import com.bulldozer_collective.modules.crm.api.CrmCompanyRecord;
+import com.bulldozer_collective.modules.crm.api.CrmCompany;
 import com.bulldozer_collective.modules.crm.api.ListCrmCompaniesParam;
 import com.bulldozer_collective.modules.crm.companies.security.ListCrmCompaniesAccessChecker;
 import com.bulldozer_collective.modules.crm.companies.services.CrmCompanyConverter;
 import com.bulldozer_collective.modules.crm.companies.services.CrmCompanyFetcher;
+import com.bulldozer_collective.modules.crm.companies.services.ListCrmCompaniesQuery;
 import com.bulldozer_collective.security.annotations.JwtRequestContext;
+import jakarta.validation.Valid;
 import com.bulldozer_collective.security.resolvers.RequestContext;
 import com.bulldozer_collective.shared.ResponsePage;
 import lombok.RequiredArgsConstructor;
@@ -25,17 +27,17 @@ public class ListCrmCompaniesController {
     private final ListCrmCompaniesAccessChecker accessChecker;
 
     @GetMapping
-    public ResponsePage<CrmCompanyRecord> list(@JwtRequestContext RequestContext context,
-                                               ListCrmCompaniesParam param) {
+    public ResponsePage<CrmCompany> list(@JwtRequestContext RequestContext context,
+                                               @Valid ListCrmCompaniesParam param) {
         this.accessChecker.checkAccess(context);
-        var page = this.fetcher.search(
-                Objects.requireNonNull(context.targetCustomerId()),
-                Objects.requireNonNull(context.projectId()),
-                param.platform(),
-                param.q(),
-                param.page(),
-                param.size()
-        );
+        var page = this.fetcher.search(ListCrmCompaniesQuery.builder()
+                .customerId(Objects.requireNonNull(context.targetCustomerId()))
+                .projectId(Objects.requireNonNull(context.projectId()))
+                .platform(param.platform())
+                .q(param.q())
+                .page(param.page())
+                .size(param.size())
+                .build());
         return this.converter.convert(page);
     }
 }

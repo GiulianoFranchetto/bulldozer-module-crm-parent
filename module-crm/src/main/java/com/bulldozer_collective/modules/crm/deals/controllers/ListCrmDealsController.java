@@ -1,11 +1,13 @@
 package com.bulldozer_collective.modules.crm.deals.controllers;
 
-import com.bulldozer_collective.modules.crm.api.CrmDealRecord;
+import com.bulldozer_collective.modules.crm.api.CrmDeal;
 import com.bulldozer_collective.modules.crm.api.ListCrmDealsParam;
 import com.bulldozer_collective.modules.crm.deals.security.ListCrmDealsAccessChecker;
 import com.bulldozer_collective.modules.crm.deals.services.CrmDealConverter;
 import com.bulldozer_collective.modules.crm.deals.services.CrmDealFetcher;
+import com.bulldozer_collective.modules.crm.deals.services.ListCrmDealsQuery;
 import com.bulldozer_collective.security.annotations.JwtRequestContext;
+import jakarta.validation.Valid;
 import com.bulldozer_collective.security.resolvers.RequestContext;
 import com.bulldozer_collective.shared.ResponsePage;
 import lombok.RequiredArgsConstructor;
@@ -25,18 +27,18 @@ public class ListCrmDealsController {
     private final ListCrmDealsAccessChecker accessChecker;
 
     @GetMapping
-    public ResponsePage<CrmDealRecord> list(@JwtRequestContext RequestContext context,
-                                            ListCrmDealsParam param) {
+    public ResponsePage<CrmDeal> list(@JwtRequestContext RequestContext context,
+                                            @Valid ListCrmDealsParam param) {
         this.accessChecker.checkAccess(context);
-        var page = this.fetcher.search(
-                Objects.requireNonNull(context.targetCustomerId()),
-                Objects.requireNonNull(context.projectId()),
-                param.platform(),
-                param.internalStage(),
-                param.pipelineId(),
-                param.page(),
-                param.size()
-        );
+        var page = this.fetcher.search(ListCrmDealsQuery.builder()
+                .customerId(Objects.requireNonNull(context.targetCustomerId()))
+                .projectId(Objects.requireNonNull(context.projectId()))
+                .platform(param.platform())
+                .internalStage(param.internalStage())
+                .pipelineId(param.pipelineId())
+                .page(param.page())
+                .size(param.size())
+                .build());
         return this.converter.convert(page);
     }
 }

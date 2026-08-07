@@ -5,5 +5,5 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 public record ListCrmPipelinesResponse(
-        @NonNull List<CrmPipelineRecord> pipelines
+        @NonNull List<CrmPipeline> pipelines
 ) {}

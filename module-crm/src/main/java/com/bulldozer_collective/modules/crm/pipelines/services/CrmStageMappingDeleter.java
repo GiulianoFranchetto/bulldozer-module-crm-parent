@@ -18,9 +18,10 @@ public class CrmStageMappingDeleter {
     public void delete(@NonNull UUID mappingId,
                        @NonNull UUID customerId,
                        @NonNull UUID projectId) {
-        var mapping = this.mappingRepository.findById(mappingId)
-                .filter(m -> m.getCustomerId().equals(customerId) && m.getProjectId().equals(projectId))
-                .orElseThrow(() -> new IllegalArgumentException("Mapping not found: " + mappingId));
+        var mapping = this.mappingRepository
+                .findByIdAndCustomerIdAndProjectId(mappingId, customerId, projectId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "mappingId: '%s' is not a known stage mapping of this project".formatted(mappingId)));
         this.mappingRepository.delete(mapping);
     }
 }

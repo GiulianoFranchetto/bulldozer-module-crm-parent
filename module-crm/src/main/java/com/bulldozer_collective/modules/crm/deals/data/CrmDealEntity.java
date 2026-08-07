@@ -22,7 +22,7 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "crm_deals",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"customerId", "projectId", "platform", "sourceId"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"customer_id", "project_id", "platform", "source_id"})
 )
 public class CrmDealEntity extends ProjectAwareEntity {
 
@@ -32,6 +32,16 @@ public class CrmDealEntity extends ProjectAwareEntity {
 
     @Column(nullable = false)
     private String sourceId;
+
+    /**
+     * Marks the sync pass that last saw this record in the CRM. Set to the pass's start instant on every
+     * upsert, then used to soft-delete whatever the pass did not see — which replaces passing the whole set of
+     * seen source ids as an {@code IN} list (PostgreSQL caps a statement at 32767 bind parameters, and a real
+     * portal holds more objects than that).
+     */
+    @Nullable
+    @Column
+    private Instant lastSeenAt;
 
     @Column(nullable = false)
     private String name;

@@ -1,16 +1,16 @@
 package com.bulldozer_collective.modules.crm.sync.services;
 
-import com.bulldozer_collective.modules.crm.api.CrmSyncRunRecord;
+import com.bulldozer_collective.modules.crm.api.CrmSyncRun;
 import com.bulldozer_collective.modules.crm.sync.data.CrmSyncRunEntity;
 import com.bulldozer_collective.shared.ModelConverter;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CrmSyncRunConverter implements ModelConverter<CrmSyncRunEntity, CrmSyncRunRecord> {
+public class CrmSyncRunConverter implements ModelConverter<CrmSyncRunEntity, CrmSyncRun> {
 
     @Override
-    public CrmSyncRunRecord convert(CrmSyncRunEntity entity) {
-        return new CrmSyncRunRecord(
+    public CrmSyncRun convert(CrmSyncRunEntity entity) {
+        return new CrmSyncRun(
                 entity.getId(),
                 entity.getCustomerId(),
                 entity.getProjectId(),

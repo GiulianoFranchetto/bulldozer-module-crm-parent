@@ -28,9 +28,10 @@ public class CrmSyncValidator {
 
         List<String> unmapped = new ArrayList<>();
         for (var pipeline : pipelines) {
-            var stages = this.stageRepository.findAllByPipelineId(pipeline.getId());
+            var stages = this.stageRepository.findAllByPipelineIdAndDeletedAtIsNull(pipeline.getId());
             for (var stage : stages) {
-                if (this.mappingRepository.findByPipelineStageId(stage.getId()).isEmpty()) {
+                if (this.mappingRepository.findByPipelineStageIdAndCustomerIdAndProjectId(
+                        stage.getId(), customerId, projectId).isEmpty()) {
                     unmapped.add("[%s] %s".formatted(pipeline.getName(), stage.getLabel()));
                 }
             }

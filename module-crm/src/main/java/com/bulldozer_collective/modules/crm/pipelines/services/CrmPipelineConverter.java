@@ -1,7 +1,7 @@
 package com.bulldozer_collective.modules.crm.pipelines.services;
 
-import com.bulldozer_collective.modules.crm.api.CrmPipelineRecord;
-import com.bulldozer_collective.modules.crm.api.CrmPipelineStageRecord;
+import com.bulldozer_collective.modules.crm.api.CrmPipeline;
+import com.bulldozer_collective.modules.crm.api.CrmPipelineStage;
 import com.bulldozer_collective.modules.crm.pipelines.data.CrmDealStageMappingRepository;
 import com.bulldozer_collective.modules.crm.pipelines.data.CrmPipelineEntity;
 import com.bulldozer_collective.modules.crm.pipelines.data.CrmPipelineStageRepository;
@@ -18,13 +18,14 @@ public class CrmPipelineConverter {
     private final CrmPipelineStageRepository stageRepository;
     private final CrmDealStageMappingRepository mappingRepository;
 
-    public CrmPipelineRecord convert(@NonNull CrmPipelineEntity entity) {
+    public CrmPipeline convert(@NonNull CrmPipelineEntity entity) {
         var stages = this.stageRepository
-                .findAllByPipelineIdOrderByDisplayOrderAsc(entity.getId())
+                .findAllByPipelineIdAndDeletedAtIsNullOrderByDisplayOrderAsc(entity.getId())
                 .stream()
                 .map(stage -> {
-                    var mapping = this.mappingRepository.findByPipelineStageId(stage.getId());
-                    return new CrmPipelineStageRecord(
+                    var mapping = this.mappingRepository.findByPipelineStageIdAndCustomerIdAndProjectId(
+                            stage.getId(), entity.getCustomerId(), entity.getProjectId());
+                    return new CrmPipelineStage(
                             stage.getId(),
                             stage.getSourceId(),
                             stage.getLabel(),
@@ -35,7 +36,7 @@ public class CrmPipelineConverter {
                 })
                 .toList();
 
-        return new CrmPipelineRecord(
+        return new CrmPipeline(
                 entity.getId(),
                 entity.getCustomerId(),
                 entity.getProjectId(),
@@ -46,7 +47,7 @@ public class CrmPipelineConverter {
         );
     }
 
-    public List<CrmPipelineRecord> convert(@NonNull List<CrmPipelineEntity> entities) {
+    public List<CrmPipeline> convert(@NonNull List<CrmPipelineEntity> entities) {
         return entities.stream().map(this::convert).toList();
     }
 }

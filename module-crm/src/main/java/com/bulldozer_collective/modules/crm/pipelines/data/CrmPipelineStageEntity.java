@@ -1,28 +1,25 @@
 package com.bulldozer_collective.modules.crm.pipelines.data;
 
+import com.bulldozer_collective.shared.jpa.ProjectAwareEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
 import java.util.UUID;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "crm_pipeline_stages")
-public class CrmPipelineStageEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+@Table(
+        name = "crm_pipeline_stages",
+        // Re-discovering a pipeline must update its stages, never duplicate them. CrmPipelineUpsertService
+        // relies on this couple; without the constraint two concurrent discoveries insert twin rows.
+        uniqueConstraints = @UniqueConstraint(columnNames = {"pipeline_id", "source_id"})
+)
+public class CrmPipelineStageEntity extends ProjectAwareEntity {
 
     @Column(nullable = false)
     private UUID pipelineId;
@@ -35,11 +32,4 @@ public class CrmPipelineStageEntity {
 
     @Column(nullable = false)
     private int displayOrder;
-
-    @CreationTimestamp
-    @Column(updatable = false)
-    private Instant createdAt = Instant.now();
-
-    @UpdateTimestamp
-    private Instant updatedAt = Instant.now();
 }

@@ -6,7 +6,6 @@ import com.bulldozer_collective.modules.crm.sync.data.CrmSyncRunEntity;
 import com.bulldozer_collective.modules.crm.sync.data.CrmSyncRunRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -19,12 +18,8 @@ public class CrmSyncRunFetcher {
 
     private final CrmSyncRunRepository repository;
 
-    public Page<CrmSyncRunEntity> search(@NonNull UUID customerId,
-                                         @NonNull UUID projectId,
-                                         @Nullable IntegrationPlatform platform,
-                                         @Nullable CrmSyncStatus status,
-                                         int page,
-                                         int size) {
-        return this.repository.search(customerId, projectId, platform, status, PageRequest.of(page, size));
+    public Page<CrmSyncRunEntity> search(@NonNull ListCrmSyncRunsQuery query) {
+        return this.repository.search(query.customerId(), query.projectId(), query.platform(), query.status(),
+                PageRequest.of(query.page(), query.size()));
     }
 }

@@ -27,7 +27,7 @@ public class TriggerCrmSyncController {
     public CrmSyncRunStartedResponse trigger(@JwtRequestContext RequestContext context,
                                              @Valid @RequestBody TriggerCrmSyncRequest request) {
         this.accessChecker.checkAccess(context);
-        var run = this.orchestrator.sync(
+        var run = this.orchestrator.enqueue(
                 Objects.requireNonNull(context.targetCustomerId()),
                 Objects.requireNonNull(context.projectId()),
                 request.platform()

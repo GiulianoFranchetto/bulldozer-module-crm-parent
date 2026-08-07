@@ -5,22 +5,22 @@ import com.bulldozer_collective.shared.IntegrationPlatform;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-public record CrmActivityRecord(
+public record CrmDeal(
         @NonNull UUID id,
         @NonNull UUID customerId,
         @NonNull UUID projectId,
         @NonNull IntegrationPlatform platform,
         @NonNull String sourceId,
-        @NonNull CrmActivityType type,
-        @Nullable String title,
-        @Nullable String body,
-        @Nullable Instant dueDate,
-        @Nullable Instant completedAt,
-        @Nullable UUID dealId,
-        @Nullable UUID contactId,
-        @Nullable UUID companyId,
+        @NonNull String name,
+        @Nullable BigDecimal amount,
+        @Nullable String currency,
+        @Nullable Instant closeDate,
+        @NonNull CrmDealStage internalStage,
+        @NonNull UUID pipelineId,
+        @NonNull UUID pipelineStageId,
         @NonNull Instant createdAt
 ) {}

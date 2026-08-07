@@ -32,6 +32,6 @@ public class CrmPipelineFetcher {
     }
 
     public List<CrmPipelineStageEntity> fetchStages(@NonNull UUID pipelineId) {
-        return this.stageRepository.findAllByPipelineIdOrderByDisplayOrderAsc(pipelineId);
+        return this.stageRepository.findAllByPipelineIdAndDeletedAtIsNullOrderByDisplayOrderAsc(pipelineId);
     }
 }

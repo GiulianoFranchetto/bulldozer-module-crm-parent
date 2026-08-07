@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
+import static com.bulldozer_collective.modules.crm.configurations.CrmLogContext.op;
+
 @Service
 @RequiredArgsConstructor
 public class DefaultAccessChecker {
@@ -19,12 +21,12 @@ public class DefaultAccessChecker {
 
     public void checkAccess(RequestContext context) {
         if (context.targetCustomerId() == null) {
-            this.logger.debug("Target customer id is missing in the request context");
+            this.logger.debug(op("CRM-006") + "Target customer id is missing in the request context");
             throw new ForbiddenException();
         }
 
         if (context.projectId() == null) {
-            this.logger.debug("Project id is missing in the request context");
+            this.logger.debug(op("CRM-006") + "Project id is missing in the request context");
             throw new ForbiddenException();
         }
 
@@ -37,7 +39,8 @@ public class DefaultAccessChecker {
         }
 
         try {
-            this.logger.debug("Checking project membership");
+            this.logger.debug(op("CRM-006", context.targetCustomerId(), context.projectId())
+                    + "Checking project membership");
             var client = GetProjectMembershipClient.builder()
                     .userId(Objects.requireNonNull(context.userId()))
                     .projectId(context.projectId())
@@ -49,11 +52,13 @@ public class DefaultAccessChecker {
                 return;
             }
         } catch (Throwable t) {
-            this.logger.error("Failed to check project membership", t);
+            this.logger.error(op("CRM-006", context.targetCustomerId(), context.projectId())
+                    + "Failed to check project membership", t);
             throw new ForbiddenException(t);
         }
 
-        this.logger.warn("User does not have access to the project");
+        this.logger.warn(op("CRM-006", context.targetCustomerId(), context.projectId())
+                + "User does not have access to the project");
         throw new ForbiddenException();
     }
 }

@@ -10,6 +10,8 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -20,11 +22,13 @@ public class CrmPipelineUpsertService {
     private final CrmPipelineStageRepository stageRepository;
 
     @Transactional
-    public CrmPipelineEntity upsertPipeline(@NonNull UUID customerId,
-                                            @NonNull UUID projectId,
-                                            @NonNull IntegrationPlatform platform,
-                                            @NonNull String sourceId,
-                                            @NonNull String name) {
+    public CrmPipelineEntity upsertPipeline(@NonNull UpsertCrmPipelineBuilder request) {
+        var customerId = request.customerId();
+        var projectId = request.projectId();
+        var platform = request.platform();
+        var sourceId = request.sourceId();
+        var name = request.name();
+
         return this.pipelineRepository
                 .findByCustomerIdAndProjectIdAndPlatformAndSourceId(customerId, projectId, platform, sourceId)
                 .map(existing -> {
@@ -46,24 +50,47 @@ public class CrmPipelineUpsertService {
     }
 
     @Transactional
-    public CrmPipelineStageEntity upsertStage(@NonNull UUID pipelineId,
-                                              @NonNull String sourceId,
-                                              @NonNull String label,
-                                              int displayOrder) {
+    public CrmPipelineStageEntity upsertStage(@NonNull UpsertCrmPipelineStageBuilder request) {
+        var customerId = request.customerId();
+        var projectId = request.projectId();
+        var pipelineId = request.pipelineId();
+        var sourceId = request.sourceId();
+        var label = request.label();
+        var displayOrder = request.displayOrder();
+
         return this.stageRepository
                 .findByPipelineIdAndSourceId(pipelineId, sourceId)
                 .map(existing -> {
                     existing.setLabel(label);
                     existing.setDisplayOrder(displayOrder);
+                    // A stage that reappears in the CRM must come back, mappings and all. It takes a bulk
+                    // update: deletedAt is @Column(updatable = false), so setting it on the entity is a no-op.
+                    if (existing.getDeletedAt() != null) {
+                        this.stageRepository.reactivateBySourceId(pipelineId, sourceId);
+                    }
                     return this.stageRepository.save(existing);
                 })
                 .orElseGet(() -> {
                     var entity = new CrmPipelineStageEntity();
+                    entity.setCustomerId(customerId);
+                    entity.setProjectId(projectId);
                     entity.setPipelineId(pipelineId);
                     entity.setSourceId(sourceId);
                     entity.setLabel(label);
                     entity.setDisplayOrder(displayOrder);
                     return this.stageRepository.save(entity);
                 });
+    }
+
+    /**
+     * Soft-deletes the stages of a pipeline the platform no longer returns, so a stage removed in the CRM
+     * stops being demanded by {@code CrmSyncValidator}.
+     */
+    @Transactional
+    public void pruneStages(@NonNull UUID pipelineId, @NonNull Set<String> seenSourceIds) {
+        if (seenSourceIds.isEmpty()) {
+            return;
+        }
+        this.stageRepository.softDeleteMissing(pipelineId, seenSourceIds, Instant.now());
     }
 }

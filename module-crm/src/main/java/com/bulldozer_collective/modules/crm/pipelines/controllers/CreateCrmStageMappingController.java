@@ -2,6 +2,7 @@ package com.bulldozer_collective.modules.crm.pipelines.controllers;
 
 import com.bulldozer_collective.modules.crm.api.CreateCrmStageMappingRequest;
 import com.bulldozer_collective.modules.crm.pipelines.security.CreateCrmStageMappingAccessChecker;
+import com.bulldozer_collective.modules.crm.pipelines.services.CreateCrmStageMappingBuilder;
 import com.bulldozer_collective.modules.crm.pipelines.services.CrmStageMappingFactory;
 import com.bulldozer_collective.security.annotations.JwtRequestContext;
 import com.bulldozer_collective.security.resolvers.RequestContext;
@@ -29,11 +30,11 @@ public class CreateCrmStageMappingController {
     public void create(@JwtRequestContext RequestContext context,
                        @Valid @RequestBody CreateCrmStageMappingRequest request) {
         this.accessChecker.checkAccess(context);
-        this.factory.create(
-                Objects.requireNonNull(context.targetCustomerId()),
-                Objects.requireNonNull(context.projectId()),
-                request.pipelineStageId(),
-                request.internalStage()
-        );
+        this.factory.create(CreateCrmStageMappingBuilder.builder()
+                .customerId(Objects.requireNonNull(context.targetCustomerId()))
+                .projectId(Objects.requireNonNull(context.projectId()))
+                .pipelineStageId(request.pipelineStageId())
+                .internalStage(request.internalStage())
+                .build());
     }
 }

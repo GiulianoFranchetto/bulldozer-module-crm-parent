@@ -6,6 +6,7 @@ import com.bulldozer_collective.modules.crm.pipelines.security.ListCrmPipelinesA
 import com.bulldozer_collective.modules.crm.pipelines.services.CrmPipelineConverter;
 import com.bulldozer_collective.modules.crm.pipelines.services.CrmPipelineFetcher;
 import com.bulldozer_collective.security.annotations.JwtRequestContext;
+import jakarta.validation.Valid;
 import com.bulldozer_collective.security.resolvers.RequestContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,7 +26,7 @@ public class ListCrmPipelinesController {
 
     @GetMapping
     public ListCrmPipelinesResponse list(@JwtRequestContext RequestContext context,
-                                         ListCrmPipelinesParam param) {
+                                         @Valid ListCrmPipelinesParam param) {
         this.accessChecker.checkAccess(context);
         var pipelines = this.fetcher.fetchAll(
                 Objects.requireNonNull(context.targetCustomerId()),

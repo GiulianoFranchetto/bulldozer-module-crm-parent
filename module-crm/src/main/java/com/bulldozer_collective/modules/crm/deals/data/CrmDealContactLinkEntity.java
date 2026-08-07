@@ -1,10 +1,8 @@
 package com.bulldozer_collective.modules.crm.deals.data;
 
+import com.bulldozer_collective.shared.jpa.ProjectAwareEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
@@ -17,13 +15,9 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "crm_deal_contact_links",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"dealId", "contactId"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"deal_id", "contact_id"})
 )
-public class CrmDealContactLinkEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+public class CrmDealContactLinkEntity extends ProjectAwareEntity {
 
     @Column(nullable = false)
     private UUID dealId;
@@ -31,9 +25,4 @@ public class CrmDealContactLinkEntity {
     @Column(nullable = false)
     private UUID contactId;
 
-    @Column(nullable = false)
-    private UUID customerId;
-
-    @Column(nullable = false)
-    private UUID projectId;
 }

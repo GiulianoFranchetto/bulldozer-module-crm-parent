@@ -7,12 +7,12 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 import java.util.UUID;
 
-public record CrmPipelineRecord(
+public record CrmPipeline(
         @NonNull UUID id,
         @NonNull UUID customerId,
         @NonNull UUID projectId,
         @NonNull IntegrationPlatform platform,
         @NonNull String sourceId,
         @NonNull String name,
-        @NonNull List<CrmPipelineStageRecord> stages
+        @NonNull List<CrmPipelineStage> stages
 ) {}

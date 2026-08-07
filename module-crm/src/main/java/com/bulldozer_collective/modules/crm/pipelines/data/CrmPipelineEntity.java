@@ -16,7 +16,7 @@ import lombok.Setter;
 @Entity
 @Table(
         name = "crm_pipelines",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"customerId", "projectId", "platform", "sourceId"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"customer_id", "project_id", "platform", "source_id"})
 )
 public class CrmPipelineEntity extends ProjectAwareEntity {
 

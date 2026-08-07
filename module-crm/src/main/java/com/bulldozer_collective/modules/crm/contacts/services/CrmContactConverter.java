@@ -1,21 +1,22 @@
 package com.bulldozer_collective.modules.crm.contacts.services;
 
-import com.bulldozer_collective.modules.crm.api.CrmContactRecord;
+import com.bulldozer_collective.modules.crm.api.CrmContact;
 import com.bulldozer_collective.modules.crm.contacts.data.CrmContactEntity;
 import com.bulldozer_collective.shared.ModelConverter;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CrmContactConverter implements ModelConverter<CrmContactEntity, CrmContactRecord> {
+public class CrmContactConverter implements ModelConverter<CrmContactEntity, CrmContact> {
 
     @Override
-    public CrmContactRecord convert(CrmContactEntity entity) {
-        return new CrmContactRecord(
+    public CrmContact convert(CrmContactEntity entity) {
+        return new CrmContact(
                 entity.getId(),
                 entity.getCustomerId(),
                 entity.getProjectId(),
                 entity.getPlatform(),
                 entity.getSourceId(),
+                entity.getContactId(),
                 entity.getFirstName(),
                 entity.getLastName(),
                 entity.getEmail(),

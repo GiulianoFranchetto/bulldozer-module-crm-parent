@@ -6,7 +6,6 @@ import com.bulldozer_collective.modules.crm.deals.data.CrmDealEntity;
 import com.bulldozer_collective.modules.crm.deals.data.CrmDealRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,14 +19,9 @@ public class CrmDealFetcher {
 
     private final CrmDealRepository repository;
 
-    public Page<CrmDealEntity> search(@NonNull UUID customerId,
-                                      @NonNull UUID projectId,
-                                      @Nullable IntegrationPlatform platform,
-                                      @Nullable CrmDealStage internalStage,
-                                      @Nullable UUID pipelineId,
-                                      int page,
-                                      int size) {
-        return this.repository.search(customerId, projectId, platform, internalStage, pipelineId, PageRequest.of(page, size));
+    public Page<CrmDealEntity> search(@NonNull ListCrmDealsQuery query) {
+        return this.repository.search(query.customerId(), query.projectId(), query.platform(), query.internalStage(), query.pipelineId(),
+                PageRequest.of(query.page(), query.size()));
     }
 
     public Optional<CrmDealEntity> findById(@NonNull UUID id,

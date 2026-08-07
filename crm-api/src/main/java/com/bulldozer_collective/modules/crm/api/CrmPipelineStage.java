@@ -5,7 +5,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
 
-public record CrmPipelineStageRecord(
+public record CrmPipelineStage(
         @NonNull UUID id,
         @NonNull String sourceId,
         @NonNull String label,

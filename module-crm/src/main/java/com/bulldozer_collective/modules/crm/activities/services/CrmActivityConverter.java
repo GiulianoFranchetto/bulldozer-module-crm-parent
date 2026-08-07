@@ -1,16 +1,16 @@
 package com.bulldozer_collective.modules.crm.activities.services;
 
 import com.bulldozer_collective.modules.crm.activities.data.CrmActivityEntity;
-import com.bulldozer_collective.modules.crm.api.CrmActivityRecord;
+import com.bulldozer_collective.modules.crm.api.CrmActivity;
 import com.bulldozer_collective.shared.ModelConverter;
 import org.springframework.stereotype.Service;
 
 @Service
-public class CrmActivityConverter implements ModelConverter<CrmActivityEntity, CrmActivityRecord> {
+public class CrmActivityConverter implements ModelConverter<CrmActivityEntity, CrmActivity> {
 
     @Override
-    public CrmActivityRecord convert(CrmActivityEntity entity) {
-        return new CrmActivityRecord(
+    public CrmActivity convert(CrmActivityEntity entity) {
+        return new CrmActivity(
                 entity.getId(),
                 entity.getCustomerId(),
                 entity.getProjectId(),

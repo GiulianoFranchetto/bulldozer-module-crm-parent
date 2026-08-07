@@ -18,14 +18,20 @@ public class CrmStageMappingFactory {
     private final CrmPipelineStageRepository stageRepository;
     private final CrmDealStageMappingRepository mappingRepository;
 
-    public CrmDealStageMappingEntity create(@NonNull UUID customerId,
-                                            @NonNull UUID projectId,
-                                            @NonNull UUID pipelineStageId,
-                                            @NonNull CrmDealStage internalStage) {
-        this.stageRepository.findById(pipelineStageId)
-                .orElseThrow(() -> new IllegalArgumentException("Pipeline stage not found: " + pipelineStageId));
+    public CrmDealStageMappingEntity create(@NonNull CreateCrmStageMappingBuilder request) {
+        var customerId = request.customerId();
+        var projectId = request.projectId();
+        var pipelineStageId = request.pipelineStageId();
+        var internalStage = request.internalStage();
 
-        this.mappingRepository.findByPipelineStageId(pipelineStageId)
+        // Tenant-scoped on purpose: an unscoped findById let a caller map a stage belonging to another
+        // customer, and — since a stage carries at most one mapping — block that customer's own mapping.
+        this.stageRepository.findByIdAndCustomerIdAndProjectIdAndDeletedAtIsNull(pipelineStageId, customerId, projectId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "pipelineStageId: '%s' is not a known pipeline stage of this project"
+                                .formatted(pipelineStageId)));
+
+        this.mappingRepository.findByPipelineStageIdAndCustomerIdAndProjectId(pipelineStageId, customerId, projectId)
                 .ifPresent(existing -> {
                     throw new ConflictException();
                 });

@@ -12,12 +12,15 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jspecify.annotations.Nullable;
 
+import java.time.Instant;
+import java.util.UUID;
+
 @Getter
 @Setter
 @Entity
 @Table(
         name = "crm_contacts",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"customerId", "projectId", "platform", "sourceId"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"customer_id", "project_id", "platform", "source_id"})
 )
 public class CrmContactEntity extends ProjectAwareEntity {
 
@@ -27,6 +30,25 @@ public class CrmContactEntity extends ProjectAwareEntity {
 
     @Column(nullable = false)
     private String sourceId;
+
+    /**
+     * Marks the sync pass that last saw this record in the CRM. Set to the pass's start instant on every
+     * upsert, then used to soft-delete whatever the pass did not see — which replaces passing the whole set of
+     * seen source ids as an {@code IN} list (PostgreSQL caps a statement at 32767 bind parameters, and a real
+     * portal holds more objects than that).
+     */
+    @Nullable
+    @Column
+    private Instant lastSeenAt;
+
+    /**
+     * Id of the canonical Bulldozer {@code Contact} this mirror row resolves to, in the contacts module.
+     * Null until the linking step runs, or when the CRM record carries too little identity to create a
+     * contact (the contacts module requires a first and last name).
+     */
+    @Nullable
+    @Column
+    private UUID contactId;
 
     @Nullable
     @Column

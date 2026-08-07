@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+import static com.bulldozer_collective.modules.crm.configurations.CrmLogContext.op;
+
 @Service
 @RequiredArgsConstructor
 public class PlatformTokenFetcher {
@@ -31,7 +33,8 @@ public class PlatformTokenFetcher {
             }
             return resp;
         } catch (RuntimeException e) {
-            this.logger.error("Could not get token", e);
+            this.logger.error(op("CRM-005", customerId, projectId)
+                    + "Could not get token for platform %s", platform, e);
             throw new NoTokenException(customerId, projectId, platform);
         }
     }

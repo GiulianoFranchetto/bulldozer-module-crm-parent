@@ -26,6 +26,17 @@ spring:
 bulldozer:
   jobs:
     init-sql: true
+  crm:
+    hubspot:
+      # An OAuth app gets roughly 110 requests / 10 s per installed account. 100ms between calls keeps the
+      # aggregate rate just under that whatever the number of syncs in flight. The retry path keys off
+      # HubSpot's own Retry-After header, so this is a safety margin rather than the actual quota.
+      min-request-interval: 100ms
+      max-retries: 4
+      initial-backoff: 1s
+      max-backoff: 30s
+      # Guard against a paging cursor that never terminates; a real portal is far below this.
+      max-pages-per-object: 10000
   # Restricts what a token minted by a hosted site's OAuth client may do (hosting-guard-starter).
   # Uses its own least-privilege Keycloak service account (realm-management:view-clients only).
   # Flip BDZ_HOSTING_GUARD_ENABLED on once that service account exists and its secret is deployed;

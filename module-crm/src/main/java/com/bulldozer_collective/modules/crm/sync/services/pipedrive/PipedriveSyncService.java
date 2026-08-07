@@ -17,14 +17,21 @@ public class PipedriveSyncService implements CrmPlatformSyncService {
     @Override
     public void discoverPipelines(@NonNull UUID customerId,
                                   @NonNull UUID projectId,
-                                  @NonNull OAuthToken token) throws Exception {
+                                  @NonNull OAuthToken token) {
         throw new UnsupportedOperationException("PipeDrive pipeline discovery not yet implemented");
     }
 
     @Override
-    public CrmSyncResult sync(@NonNull UUID customerId,
-                              @NonNull UUID projectId,
-                              @NonNull OAuthToken token) throws Exception {
+    public CrmSyncResult syncObjects(@NonNull UUID customerId,
+                                     @NonNull UUID projectId,
+                                     @NonNull OAuthToken token) {
+        throw new UnsupportedOperationException("PipeDrive sync not yet implemented");
+    }
+
+    @Override
+    public void syncAssociations(@NonNull UUID customerId,
+                                 @NonNull UUID projectId,
+                                 @NonNull OAuthToken token) {
         throw new UnsupportedOperationException("PipeDrive sync not yet implemented");
     }
 }

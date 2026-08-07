@@ -1,6 +1,6 @@
 package com.bulldozer_collective.modules.crm.companies.controllers;
 
-import com.bulldozer_collective.modules.crm.api.CrmCompanyRecord;
+import com.bulldozer_collective.modules.crm.api.GetCrmCompanyResponse;
 import com.bulldozer_collective.modules.crm.companies.security.GetCrmCompanyAccessChecker;
 import com.bulldozer_collective.modules.crm.companies.services.CrmCompanyConverter;
 import com.bulldozer_collective.modules.crm.companies.services.CrmCompanyFetcher;
@@ -25,13 +25,14 @@ public class GetCrmCompanyController {
     private final GetCrmCompanyAccessChecker accessChecker;
 
     @GetMapping("/{id}")
-    public CrmCompanyRecord get(@JwtRequestContext RequestContext context,
-                                @PathVariable UUID id) {
+    public GetCrmCompanyResponse get(@JwtRequestContext RequestContext context,
+                                       @PathVariable UUID id) {
         this.accessChecker.checkAccess(context);
-        return this.fetcher.findById(id,
+        // orElseThrow() raises NoSuchElementException, which the adviser maps to a 404.
+        var entity = this.fetcher.findById(id,
                         Objects.requireNonNull(context.targetCustomerId()),
                         Objects.requireNonNull(context.projectId()))
-                .map(this.converter::convert)
                 .orElseThrow();
+        return new GetCrmCompanyResponse(this.converter.convert(entity));
     }
 }

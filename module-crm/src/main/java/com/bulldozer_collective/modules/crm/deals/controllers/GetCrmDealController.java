@@ -1,6 +1,6 @@
 package com.bulldozer_collective.modules.crm.deals.controllers;
 
-import com.bulldozer_collective.modules.crm.api.CrmDealRecord;
+import com.bulldozer_collective.modules.crm.api.GetCrmDealResponse;
 import com.bulldozer_collective.modules.crm.deals.security.GetCrmDealAccessChecker;
 import com.bulldozer_collective.modules.crm.deals.services.CrmDealConverter;
 import com.bulldozer_collective.modules.crm.deals.services.CrmDealFetcher;
@@ -25,13 +25,14 @@ public class GetCrmDealController {
     private final GetCrmDealAccessChecker accessChecker;
 
     @GetMapping("/{id}")
-    public CrmDealRecord get(@JwtRequestContext RequestContext context,
+    public GetCrmDealResponse get(@JwtRequestContext RequestContext context,
                              @PathVariable UUID id) {
         this.accessChecker.checkAccess(context);
-        return this.fetcher.findById(id,
+        // orElseThrow() raises NoSuchElementException, which the adviser maps to a 404.
+        var entity = this.fetcher.findById(id,
                         Objects.requireNonNull(context.targetCustomerId()),
                         Objects.requireNonNull(context.projectId()))
-                .map(this.converter::convert)
                 .orElseThrow();
+        return new GetCrmDealResponse(this.converter.convert(entity));
     }
 }

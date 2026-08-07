@@ -8,12 +8,14 @@ import org.jspecify.annotations.Nullable;
 import java.time.Instant;
 import java.util.UUID;
 
-public record CrmCompanyRecord(
+public record CrmCompany(
         @NonNull UUID id,
         @NonNull UUID customerId,
         @NonNull UUID projectId,
         @NonNull IntegrationPlatform platform,
         @NonNull String sourceId,
+        /** The canonical Bulldozer company this CRM record resolves to; null while unlinked. */
+        @Nullable UUID companyId,
         @NonNull String name,
         @Nullable String domain,
         @Nullable String industry,
