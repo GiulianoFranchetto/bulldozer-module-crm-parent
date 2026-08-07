@@ -302,3 +302,28 @@ Failure modes visible on a run:
 3. `POST /crm/pipelines/discover`.
 4. `POST /crm/stage-mappings` for **every** stage returned with `mappedInternalStage: null`.
 5. `POST /crm/sync/trigger`, then poll `GET /crm/sync/runs`.
+
+---
+
+## Error responses
+
+Every **4xx** response carries a JSON body naming what the caller got wrong. The caller is the frontend or
+an MCP agent, and neither can self-correct from a bodyless `400 Bad Request`.
+
+```json
+{ "error": "state: 'FOO_STATE_BOGUS' is not a valid value; accepted values: FOO_STATE_OPENED, FOO_STATE_ARCHIVED" }
+```
+
+| Situation | Body |
+|---|---|
+| Value outside an enum (query param, path variable, or a field of the JSON body) | names the field and lists the accepted constants — deprecated ones are omitted |
+| Malformed UUID | `"<field>: expected a UUID, got '<value>'"` |
+| Wrong scalar type | `"<field>: expected a value of type <Type>, got '<value>'"` |
+| Missing mandatory query parameter | `"<name> is required (expected a <Type>)"` |
+| Unparseable JSON body | `"Malformed request body: <parser message>"` |
+| `403` | always the constant `{"error": "Forbidden"}` — the failing access check is never disclosed |
+| `409` on a database constraint | a generic sentence; the constraint name stays in the logs |
+| `402`, `429` | the reason (missing capability, jeton balance, rate limit) |
+
+Every **5xx** response is **bodyless** on purpose: internal failure detail is logged, never returned.
+Messages describing internal state (`IllegalStateException`, `NullPointerException`) are never surfaced.
