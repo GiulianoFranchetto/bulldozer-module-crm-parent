@@ -27,8 +27,9 @@ Base URL: this module's service (port `43200` in dev).
 | Pagination | `page` (0-based, default `0`) and `size` (default `20`, max `200`) query parameters; both optional. List endpoints return a `ResponsePage<T>` |
 | MCP | Not exposed — there is no `mcp_tools.do` in this project |
 
-**RBAC — identical for all 15 endpoints**: `BULLDOZER_ADMINISTRATOR`, the target customer's administrator, or
-**any member of the project**. Reads and writes alike; there is no manager-only endpoint. See `RBAC.md`.
+**RBAC — identical for all 15 endpoints**: `BULLDOZER_ADMINISTRATOR`, `BULLDOZER_OPS`, the target customer's
+administrator, or **any member of the project**. Reads and writes alike; there is no manager-only endpoint.
+See `RBAC.md`.
 
 ---
 
