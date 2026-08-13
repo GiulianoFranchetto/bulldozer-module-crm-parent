@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 import static com.bulldozer_collective.modules.crm.configurations.CrmLogContext.op;
 import static com.bulldozer_collective.modules.crm.configurations.RequestErrorDescriber.describe;
-import static com.bulldozer_collective.modules.crm.configurations.RequestErrorDescriber.resolveRequiredType;
+import static com.bulldozer_collective.modules.crm.configurations.RequestErrorDescriber.describeBindingFailure;
 
 /**
  * Maps exceptions to HTTP responses for the whole module.
@@ -89,9 +89,7 @@ public class GlobalControllerAdviser {
         var message = e.getFieldErrors().stream()
                 // isBindingFailure() separates "could not convert the value" from "value is invalid".
                 .map(fieldError -> fieldError.isBindingFailure()
-                        ? describe(fieldError.getField(),
-                                   fieldError.getRejectedValue(),
-                                   resolveRequiredType(e.getBindingResult(), fieldError))
+                        ? describeBindingFailure(e.getBindingResult(), fieldError)
                         : fieldError.getField() + ": " + fieldError.getDefaultMessage())
                 .collect(Collectors.joining("; "));
 
