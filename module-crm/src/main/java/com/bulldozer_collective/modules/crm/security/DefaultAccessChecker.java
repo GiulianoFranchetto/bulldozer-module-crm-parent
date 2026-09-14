@@ -1,7 +1,7 @@
 package com.bulldozer_collective.modules.crm.security;
 
 import com.bulldozer_collective.logging.BulldozerLogger;
-import com.bulldozer_collective.projects.api.clients.GetProjectMembershipClient;
+import com.bulldozer_collective.projects.api.clients.InternalGetProjectMembershipClient;
 import com.bulldozer_collective.security.Roles;
 import com.bulldozer_collective.security.resolvers.RequestContext;
 import com.bulldozer_collective.security.services.SecurityTools;
@@ -69,11 +69,10 @@ public class DefaultAccessChecker {
         try {
             this.logger.debug(op("CRM-006", context.targetCustomerId(), context.projectId())
                     + "Checking project membership");
-            var client = GetProjectMembershipClient.builder()
+            var client = InternalGetProjectMembershipClient.builder()
                     .userId(Objects.requireNonNull(context.userId()))
                     .projectId(context.projectId())
                     .customerId(context.targetCustomerId())
-                    .auth(context.authorizationHeader())
                     .build();
             var resp = client.execute();
             if (resp != null && resp.memberships() != null && !resp.memberships().isEmpty()) {

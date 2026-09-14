@@ -64,7 +64,6 @@ class DefaultAccessCheckerTest {
                 .roles(new String[]{ROLE_PREFIX + Roles.BULLDOZER_CUSTOMER_ADMINISTRATOR})
                 .firstName("Jordan")
                 .email("jordan@example.com")
-                .authorizationHeader("Bearer token")
                 .build();
 
         assertDoesNotThrow(() -> this.checker.checkAccess(context));
@@ -83,7 +82,6 @@ class DefaultAccessCheckerTest {
                 .roles(new String[]{ROLE_PREFIX + Roles.BULLDOZER_CUSTOMER_ADMINISTRATOR})
                 .firstName("Jordan")
                 .email("jordan@example.com")
-                .authorizationHeader("Bearer token")
                 .build();
 
         assertThrows(ForbiddenException.class, () -> this.checker.checkAccess(context));
@@ -97,7 +95,6 @@ class DefaultAccessCheckerTest {
                 .roles(new String[]{ROLE_PREFIX + Roles.BULLDOZER_OPS})
                 .firstName("Jordan")
                 .email("jordan@example.com")
-                .authorizationHeader("Bearer token")
                 .build();
 
         assertThrows(ForbiddenException.class, () -> this.checker.checkAccess(context));
@@ -111,7 +108,6 @@ class DefaultAccessCheckerTest {
                 .roles(new String[]{ROLE_PREFIX + Roles.BULLDOZER_OPS})
                 .firstName("Jordan")
                 .email("jordan@example.com")
-                .authorizationHeader("Bearer token")
                 .build();
 
         assertThrows(ForbiddenException.class, () -> this.checker.checkAccess(context));
@@ -129,7 +125,6 @@ class DefaultAccessCheckerTest {
                 .roles(new String[]{ROLE_PREFIX + Roles.BULLDOZER_EMPLOYEE})
                 .firstName("Jordan")
                 .email("jordan@example.com")
-                .authorizationHeader("Bearer token")
                 .build();
 
         assertThrows(ForbiddenException.class, () -> this.checker.checkAccess(context));
@@ -143,7 +138,6 @@ class DefaultAccessCheckerTest {
                 .roles(new String[]{ROLE_PREFIX + role})
                 .firstName("Jordan")
                 .email("jordan@example.com")
-                .authorizationHeader("Bearer token")
                 .build();
     }
 }
