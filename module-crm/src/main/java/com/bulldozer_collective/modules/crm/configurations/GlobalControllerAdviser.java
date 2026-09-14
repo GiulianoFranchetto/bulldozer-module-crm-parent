@@ -16,9 +16,14 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -239,6 +244,47 @@ public class GlobalControllerAdviser {
         // than leaking the downstream status to our caller.
         this.logger.warn(op("CRM-006") + "Upstream dependency returned %s", e.getStatusCode());
         return ResponseEntity.status(502).build();
+    }
+
+    // ── négociation de contenu / méthode ─────────────────────────────────────
+
+    /*
+     * Without these three, the @ExceptionHandler(Throwable.class) catch-all below wins over Spring's own
+     * handling of its ErrorResponse exceptions, and a plain content-negotiation mistake answers an opaque
+     * 500 instead of the 415 / 405 / 406 that tells the caller what to fix. The classic case: a POST sent
+     * with the wrong Content-Type, or none at all — no mapping matches and the caller deserves to be told
+     * which media types are accepted.
+     */
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<Map<String, String>> on(HttpMediaTypeNotSupportedException e) {
+        var supported = e.getSupportedMediaTypes().stream().map(Object::toString).collect(Collectors.joining(", "));
+        var message = "Unsupported Content-Type" + (blank(supported) ? "" : "; expected one of: " + supported);
+        this.logger.warn(op("CRM-006") + "Unsupported media type: %s", message);
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(Map.of("error", message));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, String>> on(HttpRequestMethodNotSupportedException e) {
+        var supported = e.getSupportedHttpMethods() == null
+                ? ""
+                : e.getSupportedHttpMethods().stream().map(Object::toString).collect(Collectors.joining(", "));
+        var message = "Method " + e.getMethod() + " is not supported"
+                + (blank(supported) ? "" : "; allowed: " + supported);
+        this.logger.warn(op("CRM-006") + "Method not supported: %s", message);
+        var response = ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED);
+        // Keep the Allow header the catch-all was dropping — it is what the spec requires on a 405.
+        if (!blank(supported)) {
+            response = response.header(HttpHeaders.ALLOW, supported);
+        }
+        return response.body(Map.of("error", message));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<Map<String, String>> on(HttpMediaTypeNotAcceptableException e) {
+        this.logger.warn(op("CRM-006") + "Not acceptable: %s", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+                .body(Map.of("error", "No representation available for the requested Accept types"));
     }
 
     // ── 500 ──────────────────────────────────────────────────────────────────

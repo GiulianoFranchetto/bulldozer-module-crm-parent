@@ -55,3 +55,14 @@ bulldozer:
       url: "https://auth.bulldozer-collective.fr"
       client-id: "bulldozer-hosting-guard"
       client-secret: "${BDZ_HOSTING_GUARD_SECRET:}"
+
+# Health probe read by the status server (status.bulldozer-collective.fr) every 30 minutes.
+# Only `health` is exposed, with no details: the response must say up or down and nothing else.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

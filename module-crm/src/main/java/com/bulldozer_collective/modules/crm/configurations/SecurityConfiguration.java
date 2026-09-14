@@ -68,7 +68,7 @@ public class SecurityConfiguration {
     SecurityFilterChain internalFilterChain(HttpSecurity http,
                                             CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
-                .securityMatcher("/internal/**")
+                .securityMatcher("/internal/**", "/actuator/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(c -> c.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(a -> a.anyRequest().permitAll())
