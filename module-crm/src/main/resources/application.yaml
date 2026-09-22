@@ -43,7 +43,11 @@ bulldozer:
   # the service logs a warning at startup while it is off.
   hosting-guard:
     enabled: ${BDZ_HOSTING_GUARD_ENABLED:false}
-    fail-closed: false
+    # What the guard does when Keycloak or the membership check does not answer and nothing is
+    # cached: false lets the request through, true rejects it. Steerable like `enabled`, and by
+    # the SAME variable across all eight services — flipping them one at a time would give a
+    # fleet where half rejects and half accepts the same request, which is worse than either.
+    fail-closed: ${BDZ_HOSTING_GUARD_FAIL_CLOSED:false}
     cache-ttl: 5m
     whitelisted-client-ids:
       - "postman"
