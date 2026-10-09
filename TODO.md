@@ -4,13 +4,10 @@ These changes must be made outside this module's source before the CRM module is
 
 ## 1. Database
 
-Create the PostgreSQL databases on the shared RDS instance (`bulldozer-database-dev-2`):
-- dev:  `dev_bdz_saas_module_crm`
-- prod: `bdz_saas_module_crm`
+Create the prod PostgreSQL database on the shared RDS instance (`bulldozer-database-dev-2`):
+`bdz_saas_module_crm`. The dev one, `dev_bdz_saas_module_crm`, exists since 2026-10-09.
 
-`ddl-auto: update` creates the three configuration tables. If a dev database was created for the V1 (the
-mirror strategy), drop it and recreate it: the V1 tables (`crm_contacts`, `crm_deals`, the job-library tables…)
-are dead and nothing migrates them.
+`ddl-auto: update` creates the three configuration tables on first start.
 
 ## 2. HubSpot app credentials in the modulith
 
