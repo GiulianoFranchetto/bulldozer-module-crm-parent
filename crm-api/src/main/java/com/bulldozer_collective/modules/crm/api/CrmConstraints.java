@@ -5,14 +5,17 @@ package com.bulldozer_collective.modules.crm.api;
  */
 public final class CrmConstraints {
 
-    /** Applied when the caller sends no {@code size}. */
-    public static final int DEFAULT_PAGE_SIZE = 20;
+    /** Applied when the caller sends no {@code limit}. */
+    public static final int DEFAULT_LIMIT = 20;
 
-    /**
-     * Upper bound on {@code size}. A CRM portal holds tens of thousands of objects, so an unbounded page size
-     * is a way to make the service load all of them in one request.
-     */
-    public static final int MAX_PAGE_SIZE = 200;
+    /** Upper bound on {@code limit}: HubSpot serves at most 100 records per listing page. */
+    public static final int MAX_LIMIT = 100;
+
+    /** Default length of a {@code VARCHAR} column, and the bound on short CRM fields. */
+    public static final int SHORT_TEXT = 255;
+
+    /** Bound on a free-text field written to the CRM (HubSpot caps a note body at 65,536 characters). */
+    public static final int LONG_TEXT = 65_536;
 
     private CrmConstraints() {
     }

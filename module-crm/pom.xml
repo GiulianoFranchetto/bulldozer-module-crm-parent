@@ -69,21 +69,6 @@
             <version>${projects-api.version}</version>
         </dependency>
         <dependency>
-            <groupId>bulldozer-collective</groupId>
-            <artifactId>job-library</artifactId>
-            <version>${job-library.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>bulldozer-collective</groupId>
-            <artifactId>contacts-api</artifactId>
-            <version>${contacts-api.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>bulldozer-collective</groupId>
-            <artifactId>companies-api</artifactId>
-            <version>${companies-api.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>

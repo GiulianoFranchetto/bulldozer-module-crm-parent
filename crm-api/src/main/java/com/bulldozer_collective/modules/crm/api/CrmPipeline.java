@@ -1,18 +1,13 @@
 package com.bulldozer_collective.modules.crm.api;
 
-import com.bulldozer_collective.shared.IntegrationPlatform;
-
+import java.util.List;
+import lombok.Builder;
 import org.jspecify.annotations.NonNull;
 
-import java.util.List;
-import java.util.UUID;
-
-public record CrmPipeline(
-        @NonNull UUID id,
-        @NonNull UUID customerId,
-        @NonNull UUID projectId,
-        @NonNull IntegrationPlatform platform,
-        @NonNull String sourceId,
-        @NonNull String name,
-        @NonNull List<CrmPipelineStage> stages
-) {}
+/** A deal pipeline of the CRM, with its native stages. */
+@Builder
+public record CrmPipeline(@NonNull String id,
+                          @NonNull String label,
+                          int displayOrder,
+                          @NonNull List<CrmPipelineStage> stages) {
+}

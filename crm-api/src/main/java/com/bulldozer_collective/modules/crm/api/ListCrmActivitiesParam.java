@@ -1,29 +1,28 @@
 package com.bulldozer_collective.modules.crm.api;
 
-import com.bulldozer_collective.shared.IntegrationPlatform;
-
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.UUID;
-
 /**
- * {@code page} and {@code size} are nullable and defaulted by the canonical constructor: a caller that sends
- * neither must get the first page, not a {@code 400}. They were primitives, which Spring bound to {@code 0}
- * for an absent parameter, and {@code PageRequest.of(0, 0)} throws.
+ * Activities are listed one type at a time: each type is its own CRM object, with its own cursor.
+ *
+ * <p>{@code q} is a full-text search on the CRM's searchable properties; {@code associatedType} + {@code associatedId}
+ * restrict the listing to the records associated with that one. Both go through the CRM's search, which indexes
+ * a write with a few seconds' delay. {@code limit} is nullable and defaulted: an absent parameter must give the
+ * first page, not a {@code 400}.
  */
-public record ListCrmActivitiesParam(
-        @Nullable CrmActivityType type,
-        @Nullable UUID dealId,
-        @Nullable UUID contactId,
-        @Nullable UUID companyId,
-        @Nullable IntegrationPlatform platform,
-        @Nullable @Min(0) Integer page,
-        @Nullable @Min(1) @Max(CrmConstraints.MAX_PAGE_SIZE) Integer size
-) {
+public record ListCrmActivitiesParam(@NonNull @NotNull CrmActivityType type,
+        @Nullable @Size(max = 3000) String q,
+        @Nullable CrmObjectType associatedType,
+        @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String associatedId,
+        @Nullable @Size(max = 4096) String cursor,
+        @Nullable @Min(1) @Max(CrmConstraints.MAX_LIMIT) Integer limit) {
+
     public ListCrmActivitiesParam {
-        page = page == null ? 0 : page;
-        size = size == null ? CrmConstraints.DEFAULT_PAGE_SIZE : size;
+        limit = limit == null ? CrmConstraints.DEFAULT_LIMIT : limit;
     }
 }

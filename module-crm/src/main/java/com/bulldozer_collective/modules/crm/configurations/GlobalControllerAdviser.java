@@ -1,8 +1,8 @@
 package com.bulldozer_collective.modules.crm.configurations;
 
 import com.bulldozer_collective.logging.BulldozerLogger;
-import com.bulldozer_collective.modules.crm.sync.services.CrmSyncValidationException;
-import com.bulldozer_collective.modules.crm.sync.services.NoTokenException;
+import com.bulldozer_collective.modules.crm.gateway.CrmAuthorizationException;
+import com.bulldozer_collective.modules.crm.gateway.NoTokenException;
 import com.bulldozer_collective.shared.exceptions.BadRequestException;
 import com.bulldozer_collective.shared.exceptions.BulldozerException;
 import com.bulldozer_collective.shared.exceptions.BulldozerRuntimeException;
@@ -28,6 +28,9 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -85,8 +88,8 @@ public class GlobalControllerAdviser {
 
     /**
      * Binding or validation failed on a whole argument object: either a conversion failure while binding the
-     * query string onto a {@code *Param} record (e.g. {@code ListCrmSyncRunsParam.status} receiving a value
-     * outside {@code CrmSyncStatus}), or a jakarta constraint violation on a {@code @Valid @RequestBody}
+     * query string onto a {@code *Param} record (e.g. {@code ListCrmActivitiesParam.type} receiving a value
+     * outside {@code CrmActivityType}), or a jakarta constraint violation on a {@code @Valid @RequestBody}
      * ({@code MethodArgumentNotValidException} extends {@link BindException}).
      */
     @ExceptionHandler(BindException.class)
@@ -105,7 +108,7 @@ public class GlobalControllerAdviser {
     /**
      * A path variable or query parameter could not be converted to its declared type — a malformed UUID, or a
      * value outside an enum. Not an {@link IllegalArgumentException} ({@link TypeMismatchException} sits under
-     * {@code BeansException}), so without this handler a bad {@code /crm/contacts/{id}} answered an opaque 500
+     * {@code BeansException}), so without this handler a bad {@code /crm/{connectionId}/contacts} answered an opaque 500
      * on what is a client error.
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -169,18 +172,8 @@ public class GlobalControllerAdviser {
     }
 
     /**
-     * Unmapped pipeline stages block a sync. The message lists every offending stage, and the caller fixes it
-     * by creating the missing mappings — so it must reach them.
-     */
-    @ExceptionHandler(CrmSyncValidationException.class)
-    public ResponseEntity<Map<String, String>> on(CrmSyncValidationException e) {
-        this.logger.warn(op("CRM-006") + "CRM sync validation failed: %s", e.getMessage());
-        return ResponseEntity.badRequest().body(error(e.getMessage(), "Some pipeline stages are not mapped"));
-    }
-
-    /**
-     * The module's own argument checks (e.g. a platform that is not a CRM, a stage id from another project)
-     * are thrown as {@link IllegalArgumentException} with a caller-facing message — surface it.
+     * The module's own argument checks (e.g. a platform that is not a CRM, a stage with no mapping in the
+     * deal's pipeline) are thrown as {@link IllegalArgumentException} with a caller-facing message — surface it.
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> on(IllegalArgumentException e) {
@@ -211,6 +204,13 @@ public class GlobalControllerAdviser {
         return ResponseEntity.status(424).body(error(e.getMessage(), "No token for this CRM platform"));
     }
 
+    /** The CRM refused the project's token. Same remedy as a missing one: reconnect the CRM. */
+    @ExceptionHandler(CrmAuthorizationException.class)
+    public ResponseEntity<Map<String, String>> on(CrmAuthorizationException e) {
+        this.logger.warn(op("CRM-006") + "CRM refused the token: %s", e.getMessage());
+        return ResponseEntity.status(424).body(error(e.getMessage(), "The CRM refused the project's token"));
+    }
+
     // ── 403 ──────────────────────────────────────────────────────────────────
 
     @ExceptionHandler(ForbiddenException.class)
@@ -229,7 +229,7 @@ public class GlobalControllerAdviser {
 
     // ── 501 ──────────────────────────────────────────────────────────────────
 
-    /** Salesforce and Pipedrive adapters are not implemented yet. */
+    /** The Salesforce gateway is not implemented yet. */
     @ExceptionHandler(UnsupportedOperationException.class)
     public ResponseEntity<Map<String, String>> on(UnsupportedOperationException e) {
         this.logger.warn(op("CRM-006") + "Not implemented: %s", e.getMessage());
@@ -238,11 +238,12 @@ public class GlobalControllerAdviser {
 
     // ── 502 ──────────────────────────────────────────────────────────────────
 
-    @ExceptionHandler(HttpClientErrorException.class)
-    public ResponseEntity<Void> on(HttpClientErrorException e) {
-        // An upstream dependency (internal module / CRM API) returned an error — answer a stable 502 rather
-        // than leaking the downstream status to our caller.
-        this.logger.warn(op("CRM-006") + "Upstream dependency returned %s", e.getStatusCode());
+    @ExceptionHandler({HttpClientErrorException.class, HttpServerErrorException.class, ResourceAccessException.class})
+    public ResponseEntity<Void> on(RestClientException e) {
+        // An upstream dependency (internal module / CRM API) failed in a way the gateway does not translate — a
+        // 429 or a 5xx still failing after the retries, a timeout. Answer a stable 502 rather than leaking the
+        // downstream status to our caller.
+        this.logger.warn(op("CRM-006") + "Upstream dependency failed: %s", e.getMessage());
         return ResponseEntity.status(502).build();
     }
 

@@ -1,7 +1,7 @@
 package com.bulldozer_collective.modules.crm.connections.security;
 
-import com.bulldozer_collective.logging.BulldozerLogger;
 import com.bulldozer_collective.modules.crm.security.DefaultAccessChecker;
+import com.bulldozer_collective.logging.BulldozerLogger;
 import com.bulldozer_collective.security.resolvers.RequestContext;
 import com.bulldozer_collective.security.services.SecurityTools;
 import org.springframework.stereotype.Service;
