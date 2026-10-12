@@ -8,10 +8,9 @@ import org.jspecify.annotations.NonNull;
  * How HubSpot stores each kind of container.
  *
  * <p>Deals: pipelines under object type id {@code 0-3} (pipelines guide), membership in {@code pipeline}, stage in
- * {@code dealstage}. Leads: object type id {@code 0-136} (Object APIs guide); HubSpot's official docs do not name
- * the leads' pipeline and stage properties — {@code hs_pipeline} / {@code hs_pipeline_stage} follow the convention
- * the docs give for tickets, projects and services, and are to be confirmed against
- * {@code GET /crm/properties/2026-09/leads} on a real portal.
+ * {@code dealstage}. Leads: object type id {@code 0-136} (Object APIs guide); membership in {@code hs_pipeline},
+ * stage in {@code hs_pipeline_stage} — not in the reference docs, but confirmed by a HubSpot-staff answer showing a
+ * lead created through the API (community thread 122975, default pipeline {@code lead-pipeline-id}).
  *
  * @param pipelineTypeId     the object type id the pipelines endpoint is documented with.
  * @param objectType         the records grouped by the pipeline.

@@ -20,15 +20,13 @@ crm.objects.leads.write`, plus `crm.schemas.deals.read` (and its leads twin) for
 exact scope names in HubSpot's scope reference before changing them. A project connected with the read-only
 scopes answers `424` on every write until it reconnects.
 
-## 3. HubSpot leads — confirm on a real portal
+## 3. HubSpot leads — one check left on a real portal
 
-HubSpot's official docs give the leads' object type id (`0-136`) but not their pipeline and stage properties.
-`HubSpotContainerKind.LEADS` assumes `hs_pipeline` / `hs_pipeline_stage`, the convention the docs give for
-tickets, projects and services. Before relying on lead containers, check on a portal with lead pipelines (Sales
-Hub Pro or Enterprise):
-1. `GET /crm/properties/2026-09/leads` lists `hs_pipeline` and `hs_pipeline_stage`.
-2. `GET /crm/pipelines/2026-09/0-136` answers the lead pipelines.
-3. Creating a lead with the `HUBSPOT_DEFINED` / `578` contact association succeeds.
+The leads' `hs_pipeline` / `hs_pipeline_stage` properties, `hs_lead_name` / `hs_lead_type`, and the
+`HUBSPOT_DEFINED` / `578` contact association are confirmed by a HubSpot-staff answer showing a lead created
+through the API (community thread 122975). Still unconfirmed: the lead pipelines answer at
+`GET /crm/pipelines/2026-09/0-136` (`HubSpotContainerKind.LEADS`). Check it on a portal with lead pipelines
+(Sales Hub Pro or Enterprise) before relying on lead containers.
 
 ## 4. Salesforce
 
