@@ -84,6 +84,21 @@ class CrmContainerSearcherTest {
     }
 
     @Test
+    @DisplayName("the imported containers of a refused type are left out, never reported gone from the CRM")
+    void neverReportsARefusedTypeGone() throws Exception {
+        var lead = imported(CrmContainerType.CRM_CONTAINER_TYPE_LEAD, "inbound");
+        this.given(List.of(lead), null, List.of());
+        when(this.gateway.listRemoteContainers(any(), eq(CrmContainerType.CRM_CONTAINER_TYPE_DEAL)))
+                .thenReturn(List.of(remote("sales")));
+        when(this.gateway.listRemoteContainers(any(), eq(CrmContainerType.CRM_CONTAINER_TYPE_LEAD)))
+                .thenThrow(new CrmAuthorizationException("HubSpot: missing scope"));
+
+        var entries = this.searcher.list(CUSTOMER, PROJECT, CONNECTION, null);
+
+        assertThat(entries).extracting(CrmContainerEntry::remoteId).containsExactly("sales");
+    }
+
+    @Test
     @DisplayName("a refused type still fails when it is the one asked for, or when every type is refused")
     void failsWhenNothingCanBeListed() throws Exception {
         this.given(List.of(), null, List.of());

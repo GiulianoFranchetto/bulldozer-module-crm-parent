@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -38,7 +39,7 @@ public class CrmContainerSearcher {
      *
      * @param type {@code null} lists the containers of deals and of leads. A type the CRM refuses to list — no
      *             leads scope, no lead pipelines on the account's subscription — is then left out rather than
-     *             failing the whole listing; it fails only when every type does.
+     *             failing the whole listing, its imported containers included; it fails only when every type does.
      */
     public @NonNull List<CrmContainerEntry> list(@NonNull UUID customerId,
                                                  @NonNull UUID projectId,
@@ -51,6 +52,7 @@ public class CrmContainerSearcher {
         var entries = new ArrayList<CrmContainerEntry>();
         var matched = new HashSet<UUID>();
         var types = type == null ? Arrays.asList(CrmContainerType.values()) : List.of(type);
+        var refused = EnumSet.noneOf(CrmContainerType.class);
         RuntimeException firstFailure = null;
         var listed = 0;
         for (var current : types) {
@@ -64,6 +66,7 @@ public class CrmContainerSearcher {
                 }
                 this.logger.warn(op("CRM-003", customerId, projectId)
                         + "Leaving %s containers out of the listing: the CRM refused them", current, e);
+                refused.add(current);
                 firstFailure = firstFailure == null ? e : firstFailure;
                 continue;
             }
@@ -85,8 +88,9 @@ public class CrmContainerSearcher {
         if (listed == 0 && firstFailure != null) {
             throw firstFailure;
         }
+        // A refused type says nothing about its containers: only a type the CRM listed can prove one gone.
         imported.stream()
-                .filter(container -> !matched.contains(container.getId()))
+                .filter(container -> !matched.contains(container.getId()) && !refused.contains(container.getType()))
                 .forEach(container -> entries.add(CrmContainerEntry.builder()
                         .remoteId(container.getRemoteId())
                         .name(container.getName())
