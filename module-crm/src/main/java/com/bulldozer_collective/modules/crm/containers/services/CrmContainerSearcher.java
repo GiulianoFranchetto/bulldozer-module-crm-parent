@@ -8,6 +8,7 @@ import com.bulldozer_collective.modules.crm.gateway.CrmGatewayResolver;
 import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.gateway.CrmSessionOpener;
 import com.bulldozer_collective.modules.crm.gateway.NoTokenException;
+import com.bulldozer_collective.logging.BulldozerLogger;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -19,6 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
+import static com.bulldozer_collective.modules.crm.configurations.CrmLogContext.op;
+
 /** What the project chooses its containers from: the CRM's containers and properties, read live. */
 @Service
 @RequiredArgsConstructor
@@ -27,12 +30,15 @@ public class CrmContainerSearcher {
     private final CrmContainerFetcher fetcher;
     private final CrmSessionOpener sessionOpener;
     private final CrmGatewayResolver gatewayResolver;
+    private final BulldozerLogger logger;
 
     /**
      * Every container of the CRM, flagged {@code selected} with its {@code containerId} when the project imported
      * it, in the CRM's order; then the imported containers the CRM no longer has.
      *
-     * @param type {@code null} lists the containers of deals and of leads.
+     * @param type {@code null} lists the containers of deals and of leads. A type the CRM refuses to list — no
+     *             leads scope, no lead pipelines on the account's subscription — is then left out rather than
+     *             failing the whole listing; it fails only when every type does.
      */
     public @NonNull List<CrmContainerEntry> list(@NonNull UUID customerId,
                                                  @NonNull UUID projectId,
@@ -45,8 +51,23 @@ public class CrmContainerSearcher {
         var entries = new ArrayList<CrmContainerEntry>();
         var matched = new HashSet<UUID>();
         var types = type == null ? Arrays.asList(CrmContainerType.values()) : List.of(type);
+        RuntimeException firstFailure = null;
+        var listed = 0;
         for (var current : types) {
-            for (var remote : gateway.listRemoteContainers(session, current)) {
+            List<CrmRemoteContainer> remotes;
+            try {
+                remotes = gateway.listRemoteContainers(session, current);
+                listed++;
+            } catch (RuntimeException e) {
+                if (type != null) {
+                    throw e;
+                }
+                this.logger.warn(op("CRM-003", customerId, projectId)
+                        + "Leaving %s containers out of the listing: the CRM refused them", current, e);
+                firstFailure = firstFailure == null ? e : firstFailure;
+                continue;
+            }
+            for (var remote : remotes) {
                 var container = find(imported, current, remote);
                 if (container != null) {
                     matched.add(container.getId());
@@ -60,6 +81,9 @@ public class CrmContainerSearcher {
                         .existsInCrm(true)
                         .build());
             }
+        }
+        if (listed == 0 && firstFailure != null) {
+            throw firstFailure;
         }
         imported.stream()
                 .filter(container -> !matched.contains(container.getId()))

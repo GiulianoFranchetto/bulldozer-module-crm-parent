@@ -9,16 +9,21 @@ Create the prod PostgreSQL database on the shared RDS instance (`bulldozer-datab
 
 `ddl-auto: update` creates the three configuration tables on first start.
 
-## 2. HubSpot app credentials in the modulith
+## 2. HubSpot app credentials and scopes
 
-`HUBSPOT_CLIENT_ID` and `HUBSPOT_SECRET` must be set in the modulith's environment. The bridge now **writes**, so
-the HubSpot app and `bulldozer.oauth.integrations.hubspot` (and its `bulldozer.projects.oauth.integrations` twin)
-must declare the write scopes as well as the read ones:
+The modulith asks for the CRM bridge's scopes on branch `feat/hubspot-crm-write-scopes` (not merged yet):
 `oauth crm.objects.contacts.read crm.objects.contacts.write crm.objects.companies.read
-crm.objects.companies.write crm.objects.deals.read crm.objects.deals.write crm.objects.leads.read
-crm.objects.leads.write`, plus `crm.schemas.deals.read` (and its leads twin) for the properties. Check the
-exact scope names in HubSpot's scope reference before changing them. A project connected with the read-only
-scopes answers `424` on every write until it reconnects.
+crm.objects.companies.write crm.objects.deals.read crm.objects.deals.write crm.schemas.deals.read`, plus
+`crm.objects.leads.read crm.objects.leads.write` as **optional** scopes (HubSpot's `optional_scope`): they exist on
+Sales Hub Pro / Enterprise only, and HubSpot drops them on other accounts instead of failing the install.
+Activities are covered by the contacts scopes.
+
+Still required:
+1. Merge the branch and deploy the modulith.
+2. Declare the same scopes in the HubSpot app — the leads ones as optional.
+3. Set `HUBSPOT_CLIENT_ID` and `HUBSPOT_SECRET` in the modulith's environment.
+4. Every project connected before that reconnects HubSpot: its token carries the read-only scopes, and every write
+   answers `424` until then.
 
 ## 3. HubSpot leads — one check left on a real portal
 

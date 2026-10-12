@@ -8,6 +8,8 @@ import com.bulldozer_collective.modules.crm.gateway.CrmGatewayResolver;
 import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.gateway.CrmSession;
 import com.bulldozer_collective.modules.crm.gateway.CrmSessionOpener;
+import com.bulldozer_collective.logging.BulldozerLogger;
+import com.bulldozer_collective.modules.crm.gateway.CrmAuthorizationException;
 import com.bulldozer_collective.shared.IntegrationPlatform;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -35,7 +38,7 @@ class CrmContainerSearcherTest {
     private final CrmGatewayResolver gatewayResolver = mock(CrmGatewayResolver.class);
     private final CrmGateway gateway = mock(CrmGateway.class);
     private final CrmContainerSearcher searcher =
-            new CrmContainerSearcher(this.fetcher, this.sessionOpener, this.gatewayResolver);
+            new CrmContainerSearcher(this.fetcher, this.sessionOpener, this.gatewayResolver, mock(BulldozerLogger.class));
 
     @Test
     @DisplayName("CRM containers come flagged selected when imported; an imported one gone from the CRM comes last")
@@ -66,6 +69,36 @@ class CrmContainerSearcherTest {
         assertThat(entries.get(0).selected()).isFalse();
     }
 
+    @Test
+    @DisplayName("listing every type, a type the CRM refuses is left out instead of failing the listing")
+    void skipsARefusedType() throws Exception {
+        this.given(List.of(), null, List.of());
+        when(this.gateway.listRemoteContainers(any(), eq(CrmContainerType.CRM_CONTAINER_TYPE_DEAL)))
+                .thenReturn(List.of(remote("sales")));
+        when(this.gateway.listRemoteContainers(any(), eq(CrmContainerType.CRM_CONTAINER_TYPE_LEAD)))
+                .thenThrow(new CrmAuthorizationException("HubSpot: missing scope"));
+
+        var entries = this.searcher.list(CUSTOMER, PROJECT, CONNECTION, null);
+
+        assertThat(entries).extracting(CrmContainerEntry::remoteId).containsExactly("sales");
+    }
+
+    @Test
+    @DisplayName("a refused type still fails when it is the one asked for, or when every type is refused")
+    void failsWhenNothingCanBeListed() throws Exception {
+        this.given(List.of(), null, List.of());
+        when(this.gateway.listRemoteContainers(any(), any(CrmContainerType.class)))
+                .thenThrow(new CrmAuthorizationException("HubSpot: missing scope"));
+        when(this.fetcher.fetchAll(CUSTOMER, PROJECT, CONNECTION, CrmContainerType.CRM_CONTAINER_TYPE_LEAD))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> this.searcher.list(CUSTOMER, PROJECT, CONNECTION, null))
+                .isInstanceOf(CrmAuthorizationException.class);
+        assertThatThrownBy(() -> this.searcher.list(CUSTOMER, PROJECT, CONNECTION,
+                CrmContainerType.CRM_CONTAINER_TYPE_LEAD))
+                .isInstanceOf(CrmAuthorizationException.class);
+    }
+
     private void given(List<CrmContainerEntity> imported, CrmContainerType type, List<CrmRemoteContainer> remote)
             throws Exception {
         var session = CrmSession.builder().customerId(CUSTOMER).projectId(PROJECT).connectionId(CONNECTION)
@@ -73,7 +106,9 @@ class CrmContainerSearcherTest {
         when(this.fetcher.fetchAll(CUSTOMER, PROJECT, CONNECTION, type)).thenReturn(imported);
         when(this.sessionOpener.open(CUSTOMER, PROJECT, CONNECTION)).thenReturn(session);
         when(this.gatewayResolver.resolve(session)).thenReturn(this.gateway);
-        when(this.gateway.listRemoteContainers(session, type)).thenReturn(remote);
+        if (type != null) {
+            when(this.gateway.listRemoteContainers(session, type)).thenReturn(remote);
+        }
     }
 
     private static CrmContainerEntity imported(CrmContainerType type, String remoteId) {
