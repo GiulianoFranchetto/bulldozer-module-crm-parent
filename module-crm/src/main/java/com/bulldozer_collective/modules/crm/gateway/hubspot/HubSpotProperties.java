@@ -12,10 +12,12 @@ import java.time.Duration;
  * header rather than off a hard-coded quota, so a change on HubSpot's side does not silently break us; the
  * throttle below is the belt to that braces.
  *
- * @param minRequestInterval spacing between two calls, across all threads. 100ms ≈ 100 requests / 10 s.
+ * @param minRequestInterval spacing between two calls of the same account, across all threads. 100ms ≈ 100
+ *                           requests / 10 s.
  * @param maxRetries         attempts after the first on a 429 or 5xx, before the request is failed.
  * @param initialBackoff     first wait when the response carries no {@code Retry-After}; doubles per attempt.
- * @param maxBackoff         ceiling for that doubling.
+ * @param maxBackoff         ceiling for that doubling, and for the wait of a call queued behind its account's
+ *                           throttle — beyond it, the call is refused.
  */
 @ConfigurationProperties(prefix = "bulldozer.crm.hubspot")
 public record HubSpotProperties(Duration minRequestInterval,

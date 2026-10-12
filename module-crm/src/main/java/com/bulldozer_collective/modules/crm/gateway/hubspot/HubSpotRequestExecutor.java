@@ -1,6 +1,7 @@
 package com.bulldozer_collective.modules.crm.gateway.hubspot;
 
 import com.bulldozer_collective.logging.BulldozerLogger;
+import com.bulldozer_collective.modules.crm.gateway.CrmUpstreamException;
 import com.bulldozer_collective.shared.exceptions.InternalException;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -13,6 +14,8 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -27,8 +30,9 @@ import static com.bulldozer_collective.modules.crm.configurations.CrmLogContext.
  *
  * <p>Two mechanisms, in this order:
  * <ol>
- *   <li>a throttle shared across threads, so the aggregate rate stays under HubSpot's quota whatever the number
- *       of requests in flight;</li>
+ *   <li>a throttle per HubSpot account, shared across threads, so each account's rate stays under its quota
+ *       whatever the number of requests in flight — and one busy account never slows another down. A call whose
+ *       turn is further away than {@code maxBackoff} is refused ({@code 502}) rather than left sleeping;</li>
  *   <li>a bounded retry that honours HubSpot's {@code Retry-After} header and otherwise backs off
  *       exponentially. Bounded on purpose, and with a short ceiling: the caller is waiting on the other end.</li>
  * </ol>
@@ -47,16 +51,26 @@ public class HubSpotRequestExecutor {
     private final HubSpotProperties properties;
     private final BulldozerLogger logger;
 
-    /** Next epoch-milli at which a call is allowed; shared by every thread. */
-    private final AtomicLong nextAllowedAt = new AtomicLong(0);
+    /**
+     * Per account, the next epoch-milli at which a call is allowed; shared by every thread. One entry per connection
+     * ever called, a handful of bytes each: there is at most one connection per project and platform.
+     */
+    private final Map<String, AtomicLong> nextAllowedAt = new ConcurrentHashMap<>();
 
-    /** @param idempotent whether the call may be replayed after a timeout or a {@code 5xx}. */
-    public <T> T execute(@NonNull String description, boolean idempotent, @NonNull Supplier<T> call) {
+    /**
+     * @param account    the HubSpot account the call is made for, keying its throttle.
+     * @param idempotent whether the call may be replayed after a timeout or a {@code 5xx}.
+     * @throws CrmUpstreamException when the account's throttle is saturated.
+     */
+    public <T> T execute(@NonNull String account,
+                         @NonNull String description,
+                         boolean idempotent,
+                         @NonNull Supplier<T> call) {
         var attempts = this.properties.maxRetries() + 1;
         RuntimeException last = null;
 
         for (var attempt = 1; attempt <= attempts; attempt++) {
-            this.throttle();
+            this.throttle(account);
             try {
                 return call.get();
             } catch (HttpClientErrorException e) {
@@ -117,20 +131,30 @@ public class HubSpotRequestExecutor {
         }
     }
 
-    private void throttle() {
+    private void throttle(@NonNull String account) {
         var interval = this.properties.minRequestInterval().toMillis();
         if (interval <= 0) {
             return;
         }
 
-        var now = System.currentTimeMillis();
-        // Atomically claim the next slot: max(now, previous slot) + interval.
-        var slot = this.nextAllowedAt.accumulateAndGet(now,
-                (previous, current) -> Math.max(previous, current) + interval);
-
-        var waitMs = slot - interval - now;
-        if (waitMs > 0) {
-            sleep(waitMs);
+        var next = this.nextAllowedAt.computeIfAbsent(account, key -> new AtomicLong(0));
+        while (true) {
+            var now = System.currentTimeMillis();
+            var previous = next.get();
+            var start = Math.max(previous, now);
+            var waitMs = start - now;
+            if (waitMs > this.properties.maxBackoff().toMillis()) {
+                // Claim nothing: a refused call must not push the calls behind it further back.
+                throw new CrmUpstreamException(
+                        "HubSpot's request quota for this account is saturated; retry in a few seconds");
+            }
+            // Atomically claim the slot [start, start + interval).
+            if (next.compareAndSet(previous, start + interval)) {
+                if (waitMs > 0) {
+                    sleep(waitMs);
+                }
+                return;
+            }
         }
     }
 

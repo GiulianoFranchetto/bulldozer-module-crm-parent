@@ -22,8 +22,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * HubSpot REST client bound to one access token, built per request by {@link HubSpotClientFactory}. Every call
- * goes through {@link HubSpotRequestExecutor} (throttle + retry); the timeouts come from the {@code RestTemplate}.
+ * HubSpot REST client bound to one access token and one account, built per request by
+ * {@link HubSpotClientFactory}. Every call goes through {@link HubSpotRequestExecutor} (the account's throttle +
+ * retry); the timeouts come from the {@code RestTemplate}.
  *
  * <p>Targets HubSpot's date-versioned API {@value #API_VERSION}: the semantic {@code /crm/v3} paths lose support in
  * September 2027.
@@ -40,15 +41,19 @@ public class HubSpotClient {
     private final JsonMapper jsonMapper;
     private final HubSpotRequestExecutor executor;
     private final String accessToken;
+    /** The key of the account's throttle: HubSpot's quotas are per installed account. */
+    private final String account;
 
     HubSpotClient(@NonNull RestTemplate restTemplate,
                   @NonNull JsonMapper jsonMapper,
                   @NonNull HubSpotRequestExecutor executor,
-                  @NonNull String accessToken) {
+                  @NonNull String accessToken,
+                  @NonNull String account) {
         this.restTemplate = restTemplate;
         this.jsonMapper = jsonMapper;
         this.executor = executor;
         this.accessToken = accessToken;
+        this.account = account;
     }
 
     /**
@@ -103,7 +108,7 @@ public class HubSpotClient {
 
         try {
             // The description names the method and path only: never the query string, never the token.
-            var raw = this.executor.execute(method + " " + uri.getPath(), idempotent,
+            var raw = this.executor.execute(this.account, method + " " + uri.getPath(), idempotent,
                     () -> this.restTemplate.exchange(uri, method, entity, String.class).getBody());
             return type == null || raw == null || raw.isBlank() ? null : this.jsonMapper.readValue(raw, type);
         } catch (HttpClientErrorException e) {

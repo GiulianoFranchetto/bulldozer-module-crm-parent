@@ -1,6 +1,7 @@
 package com.bulldozer_collective.modules.crm.gateway.hubspot;
 
 import com.bulldozer_collective.logging.BulldozerLogger;
+import com.bulldozer_collective.modules.crm.gateway.CrmUpstreamException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -35,7 +36,7 @@ class HubSpotRequestExecutorTest {
     void retriesOnTooManyRequests() {
         var attempts = new AtomicInteger();
 
-        var result = this.executor.execute("test", true, () -> {
+        var result = this.executor.execute("account", "test", true, () -> {
             if (attempts.incrementAndGet() < 3) {
                 throw tooManyRequests(null);
             }
@@ -51,7 +52,7 @@ class HubSpotRequestExecutorTest {
     void honoursRetryAfterHeader() {
         var attempts = new AtomicInteger();
 
-        var result = this.executor.execute("test", true, () -> {
+        var result = this.executor.execute("account", "test", true, () -> {
             if (attempts.incrementAndGet() == 1) {
                 throw tooManyRequests("2");
             }
@@ -67,7 +68,7 @@ class HubSpotRequestExecutorTest {
     void retriesOnServerError() {
         var attempts = new AtomicInteger();
 
-        var result = this.executor.execute("test", true, () -> {
+        var result = this.executor.execute("account", "test", true, () -> {
             if (attempts.incrementAndGet() == 1) {
                 throw HttpServerErrorException.create(HttpStatus.BAD_GATEWAY, "bad gateway",
                         HttpHeaders.EMPTY, new byte[0], null);
@@ -84,7 +85,7 @@ class HubSpotRequestExecutorTest {
     void doesNotRetryOnClientError() {
         var attempts = new AtomicInteger();
 
-        assertThatThrownBy(() -> this.executor.execute("test", true, () -> {
+        assertThatThrownBy(() -> this.executor.execute("account", "test", true, () -> {
             attempts.incrementAndGet();
             throw HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "bad request",
                     HttpHeaders.EMPTY, new byte[0], null);
@@ -98,7 +99,7 @@ class HubSpotRequestExecutorTest {
     void givesUpAfterMaxRetries() {
         var attempts = new AtomicInteger();
 
-        assertThatThrownBy(() -> this.executor.execute("test", true, () -> {
+        assertThatThrownBy(() -> this.executor.execute("account", "test", true, () -> {
             attempts.incrementAndGet();
             throw tooManyRequests(null);
         })).isInstanceOf(HttpClientErrorException.class);
@@ -112,7 +113,7 @@ class HubSpotRequestExecutorTest {
     void doesNotReplayNonIdempotentCallOnServerError() {
         var attempts = new AtomicInteger();
 
-        assertThatThrownBy(() -> this.executor.execute("test", false, () -> {
+        assertThatThrownBy(() -> this.executor.execute("account", "test", false, () -> {
             attempts.incrementAndGet();
             throw HttpServerErrorException.create(HttpStatus.BAD_GATEWAY, "bad gateway",
                     HttpHeaders.EMPTY, new byte[0], null);
@@ -126,7 +127,7 @@ class HubSpotRequestExecutorTest {
     void doesNotReplayNonIdempotentCallOnTimeout() {
         var attempts = new AtomicInteger();
 
-        assertThatThrownBy(() -> this.executor.execute("test", false, () -> {
+        assertThatThrownBy(() -> this.executor.execute("account", "test", false, () -> {
             attempts.incrementAndGet();
             throw new ResourceAccessException("Read timed out");
         })).isInstanceOf(ResourceAccessException.class);
@@ -139,7 +140,7 @@ class HubSpotRequestExecutorTest {
     void retriesNonIdempotentCallOnTooManyRequests() {
         var attempts = new AtomicInteger();
 
-        var result = this.executor.execute("test", false, () -> {
+        var result = this.executor.execute("account", "test", false, () -> {
             if (attempts.incrementAndGet() == 1) {
                 throw tooManyRequests(null);
             }
@@ -148,6 +149,37 @@ class HubSpotRequestExecutorTest {
 
         assertThat(result).isEqualTo("ok");
         assertThat(attempts.get()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("accounts are throttled apart: one busy account never delays another")
+    void throttlesEachAccountOnItsOwn() {
+        var throttled = new HubSpotRequestExecutor(
+                new HubSpotProperties(Duration.ofSeconds(1), 0, Duration.ZERO, Duration.ofSeconds(1)),
+                mock(BulldozerLogger.class));
+        throttled.execute("busy", "test", true, () -> "first");
+
+        var started = System.nanoTime();
+        throttled.execute("other", "test", true, () -> "ok");
+
+        assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofMillis(500));
+    }
+
+    @Test
+    @DisplayName("a call whose turn is beyond maxBackoff is refused rather than left sleeping")
+    void refusesCallQueuedTooLong() {
+        var throttled = new HubSpotRequestExecutor(
+                new HubSpotProperties(Duration.ofSeconds(10), 0, Duration.ZERO, Duration.ofSeconds(1)),
+                mock(BulldozerLogger.class));
+        throttled.execute("busy", "test", true, () -> "first");
+        var attempts = new AtomicInteger();
+
+        assertThatThrownBy(() -> throttled.execute("busy", "test", true, () -> {
+            attempts.incrementAndGet();
+            return "ok";
+        })).isInstanceOf(CrmUpstreamException.class);
+
+        assertThat(attempts.get()).isZero();
     }
 
     private static HttpClientErrorException tooManyRequests(String retryAfterSeconds) {

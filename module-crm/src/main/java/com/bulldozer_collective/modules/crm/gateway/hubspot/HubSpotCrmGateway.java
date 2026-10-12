@@ -138,7 +138,7 @@ public class HubSpotCrmGateway implements CrmGateway {
     public @NonNull List<CrmRemoteContainer> listRemoteContainers(@NonNull CrmSession session,
                                                                   @NonNull CrmContainerType type) {
         var kind = HubSpotContainerKind.of(type);
-        var response = this.clientFactory.create(session.accessToken())
+        var response = this.clientFactory.create(session)
                 .get(List.of("crm", "pipelines", API_VERSION, kind.pipelineTypeId()), Map.of(), PIPELINES);
         return results(response).stream()
                 .filter(pipeline -> pipeline.id() != null && !Boolean.TRUE.equals(pipeline.archived()))
@@ -155,7 +155,7 @@ public class HubSpotCrmGateway implements CrmGateway {
     @Override
     public @NonNull List<CrmProperty> listProperties(@NonNull CrmSession session, @NonNull CrmContainerType type) {
         var kind = HubSpotContainerKind.of(type);
-        var response = this.clientFactory.create(session.accessToken())
+        var response = this.clientFactory.create(session)
                 .get(List.of("crm", "properties", API_VERSION, kind.propertiesPath()), Map.of(), PROPERTIES);
         return results(response).stream()
                 .filter(property -> property.name() != null
@@ -296,7 +296,7 @@ public class HubSpotCrmGateway implements CrmGateway {
 
     @Override
     public void associate(@NonNull CrmSession session, @NonNull CrmObjectRef from, @NonNull CrmObjectRef to) {
-        this.clientFactory.create(session.accessToken()).call(HttpMethod.PUT, List.of(
+        this.clientFactory.create(session).call(HttpMethod.PUT, List.of(
                 "crm", "objects", API_VERSION, HubSpotObjectTypes.singular(from.type()), from.id(),
                 "associations", "default", HubSpotObjectTypes.singular(to.type()), to.id()));
     }
@@ -304,7 +304,7 @@ public class HubSpotCrmGateway implements CrmGateway {
     /** Removes every association between the two records — HubSpot has no way to remove only the default one. */
     @Override
     public void dissociate(@NonNull CrmSession session, @NonNull CrmObjectRef from, @NonNull CrmObjectRef to) {
-        this.clientFactory.create(session.accessToken()).call(HttpMethod.DELETE, List.of(
+        this.clientFactory.create(session).call(HttpMethod.DELETE, List.of(
                 "crm", "objects", API_VERSION, HubSpotObjectTypes.singular(from.type()), from.id(),
                 "associations", HubSpotObjectTypes.singular(to.type()), to.id()));
     }
@@ -318,7 +318,7 @@ public class HubSpotCrmGateway implements CrmGateway {
                                 @Nullable Map<String, String> equals,
                                 @NonNull List<String> properties,
                                 @NonNull Function<HubSpotObject, T> mapper) {
-        var client = this.clientFactory.create(session.accessToken());
+        var client = this.clientFactory.create(session);
         HubSpotResults<HubSpotObject> response;
         if (query.filtered() || equals != null) {
             response = client.search(objectPath(type, "search"), searchBody(query, equals, properties), OBJECTS);
@@ -343,7 +343,7 @@ public class HubSpotCrmGateway implements CrmGateway {
                               @NonNull CrmObjectType type,
                               @NonNull String id,
                               @NonNull List<String> properties) {
-        var response = this.clientFactory.create(session.accessToken())
+        var response = this.clientFactory.create(session)
                 .get(objectPath(type, id), Map.of("properties", String.join(",", properties)), OBJECT);
         if (response == null || response.id() == null) {
             throw new NotFoundException("HubSpot: no %s %s".formatted(HubSpotObjectTypes.singular(type), id));
@@ -360,7 +360,7 @@ public class HubSpotCrmGateway implements CrmGateway {
         if (!associations.isEmpty()) {
             body.put("associations", associations);
         }
-        var response = this.clientFactory.create(session.accessToken())
+        var response = this.clientFactory.create(session)
                 .send(HttpMethod.POST, objectPath(type), body, OBJECT);
         if (response == null || response.id() == null) {
             throw new CrmUpstreamException("HubSpot answered a create without an id");
@@ -372,7 +372,7 @@ public class HubSpotCrmGateway implements CrmGateway {
                         @NonNull CrmObjectType type,
                         @NonNull String id,
                         @NonNull Map<String, String> properties) {
-        this.clientFactory.create(session.accessToken())
+        this.clientFactory.create(session)
                 .send(HttpMethod.PATCH, objectPath(type, id), Map.of("properties", properties), OBJECT);
     }
 
