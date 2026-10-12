@@ -220,9 +220,9 @@ public class HubSpotCrmGateway implements CrmGateway {
     public @NonNull String createDeal(@NonNull CrmSession session,
                                       @NonNull String containerRemoteId,
                                       @NonNull SaveCrmDealBuilder deal,
-                                      @NonNull CrmStageWrite stage) {
+                                      @NonNull List<CrmStageWrite> stages) {
         return this.create(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL,
-                HubSpotMapper.deal(deal, containerRemoteId, stage), List.of());
+                HubSpotMapper.deal(deal, containerRemoteId, stages), List.of());
     }
 
     @Override
@@ -230,7 +230,8 @@ public class HubSpotCrmGateway implements CrmGateway {
                            @NonNull String id,
                            @NonNull SaveCrmDealBuilder deal,
                            @Nullable CrmStageWrite stage) {
-        this.update(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL, id, HubSpotMapper.deal(deal, null, stage));
+        this.update(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL, id,
+                HubSpotMapper.deal(deal, null, stage == null ? List.of() : List.of(stage)));
     }
 
     // ── leads ────────────────────────────────────────────────────────────────
@@ -258,14 +259,14 @@ public class HubSpotCrmGateway implements CrmGateway {
     public @NonNull String createLead(@NonNull CrmSession session,
                                       @NonNull String containerRemoteId,
                                       @NonNull CreateCrmLeadBuilder lead,
-                                      @NonNull CrmStageWrite stage) {
+                                      @NonNull List<CrmStageWrite> stages) {
         var contact = Map.of(
                 "to", Map.of("id", lead.contactId()),
                 "types", List.of(Map.of(
                         "associationCategory", "HUBSPOT_DEFINED",
                         "associationTypeId", LEAD_TO_CONTACT_ASSOCIATION_TYPE)));
         return this.create(session, CrmObjectType.CRM_OBJECT_TYPE_LEAD,
-                HubSpotMapper.lead(lead, containerRemoteId, stage), List.of(contact));
+                HubSpotMapper.lead(lead, containerRemoteId, stages), List.of(contact));
     }
 
     // ── activities ───────────────────────────────────────────────────────────

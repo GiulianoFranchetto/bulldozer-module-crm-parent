@@ -192,27 +192,25 @@ final class HubSpotMapper {
     /** @param containerRemoteId the pipeline to create the deal in; {@code null} on an update, which never moves it. */
     static @NonNull Map<String, String> deal(@NonNull SaveCrmDealBuilder deal,
                                              @Nullable String containerRemoteId,
-                                             @Nullable CrmStageWrite stage) {
+                                             @NonNull List<CrmStageWrite> stages) {
         var properties = new LinkedHashMap<String, String>();
         put(properties, "dealname", deal.name());
         put(properties, "amount", deal.amount() == null ? null : deal.amount().toPlainString());
         put(properties, "deal_currency_code", deal.currency());
         put(properties, "closedate", deal.closeDate() == null ? null : deal.closeDate().toString());
         put(properties, HubSpotContainerKind.DEALS.pipelineProperty(), containerRemoteId);
-        if (stage != null) {
-            properties.put(stage.propertyName(), stage.value());
-        }
+        stages.forEach(stage -> properties.put(stage.propertyName(), stage.value()));
         return properties;
     }
 
     static @NonNull Map<String, String> lead(@NonNull CreateCrmLeadBuilder lead,
                                              @NonNull String containerRemoteId,
-                                             @NonNull CrmStageWrite stage) {
+                                             @NonNull List<CrmStageWrite> stages) {
         var properties = new LinkedHashMap<String, String>();
         properties.put("hs_lead_name", lead.name());
         put(properties, "hs_lead_type", lead.type());
         properties.put(HubSpotContainerKind.LEADS.pipelineProperty(), containerRemoteId);
-        properties.put(stage.propertyName(), stage.value());
+        stages.forEach(stage -> properties.put(stage.propertyName(), stage.value()));
         return properties;
     }
 

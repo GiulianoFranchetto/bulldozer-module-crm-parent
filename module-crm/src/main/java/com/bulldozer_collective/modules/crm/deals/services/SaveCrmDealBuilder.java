@@ -17,8 +17,10 @@ public record SaveCrmDealBuilder(@Nullable String name,
                                  @Nullable CrmDealStage stage,
                                  @Nullable BigDecimal amount,
                                  @Nullable String currency,
-                                 @Nullable Instant closeDate) {
+                                 @Nullable Instant closeDate,
+                                 @Nullable String pipelineStage) {
 
+    /** Whether an update has nothing to write; {@code pipelineStage} is for a create only. */
     public boolean isEmpty() {
         return Stream.of(this.name, this.stage, this.amount, this.currency, this.closeDate)
                 .allMatch(value -> value == null);

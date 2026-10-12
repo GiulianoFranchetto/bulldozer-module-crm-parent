@@ -13,5 +13,6 @@ import org.jspecify.annotations.Nullable;
 public record CreateCrmLeadBuilder(@NonNull String name,
                                    @NonNull String contactId,
                                    @NonNull CrmLeadStage stage,
-                                   @Nullable String type) {
+                                   @Nullable String type,
+                                   @Nullable String pipelineStage) {
 }

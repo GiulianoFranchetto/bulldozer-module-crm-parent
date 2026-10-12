@@ -49,6 +49,7 @@ public class CreateCrmDealController {
                         .amount(request.amount())
                         .currency(request.currency())
                         .closeDate(request.closeDate())
+                        .pipelineStage(request.pipelineStage())
                         .build());
         return new CreateCrmDealResponse(deal);
     }

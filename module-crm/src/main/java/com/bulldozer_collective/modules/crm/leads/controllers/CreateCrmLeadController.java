@@ -48,6 +48,7 @@ public class CreateCrmLeadController {
                         .contactId(request.contactId())
                         .stage(request.stage())
                         .type(request.type())
+                        .pipelineStage(request.pipelineStage())
                         .build());
         return new CreateCrmLeadResponse(lead);
     }

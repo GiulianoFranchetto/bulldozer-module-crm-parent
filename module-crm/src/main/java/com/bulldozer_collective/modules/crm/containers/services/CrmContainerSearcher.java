@@ -1,6 +1,7 @@
 package com.bulldozer_collective.modules.crm.containers.services;
 
 import com.bulldozer_collective.modules.crm.api.CrmContainerEntry;
+import com.bulldozer_collective.modules.crm.api.CrmContainerEntryStage;
 import com.bulldozer_collective.modules.crm.api.CrmContainerType;
 import com.bulldozer_collective.modules.crm.api.CrmProperty;
 import com.bulldozer_collective.modules.crm.containers.data.CrmContainerEntity;
@@ -82,6 +83,13 @@ public class CrmContainerSearcher {
                         .selected(container != null)
                         .containerId(container == null ? null : container.getId())
                         .existsInCrm(true)
+                        .stages(remote.stages().stream()
+                                .map(stage -> CrmContainerEntryStage.builder()
+                                        .remoteId(stage.remoteId())
+                                        .name(stage.name())
+                                        .displayOrder(stage.displayOrder())
+                                        .build())
+                                .toList())
                         .build());
             }
         }
@@ -98,6 +106,7 @@ public class CrmContainerSearcher {
                         .selected(true)
                         .containerId(container.getId())
                         .existsInCrm(false)
+                        .stages(List.of())
                         .build()));
         return entries;
     }

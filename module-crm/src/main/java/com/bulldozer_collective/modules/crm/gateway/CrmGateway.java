@@ -90,10 +90,11 @@ public interface CrmGateway {
                                                  @NonNull String id,
                                                  @NonNull String stageProperty);
 
+    /** @param stages every stage value the deal is created with (see {@code CrmStageSources#creationWrites}). */
     @NonNull String createDeal(@NonNull CrmSession session,
                                @NonNull String containerRemoteId,
                                @NonNull SaveCrmDealBuilder deal,
-                               @NonNull CrmStageWrite stage);
+                               @NonNull List<CrmStageWrite> stages);
 
     void updateDeal(@NonNull CrmSession session,
                     @NonNull String id,
@@ -112,10 +113,11 @@ public interface CrmGateway {
                                                  @NonNull String id,
                                                  @NonNull String stageProperty);
 
+    /** @param stages every stage value the lead is created with (see {@code CrmStageSources#creationWrites}). */
     @NonNull String createLead(@NonNull CrmSession session,
                                @NonNull String containerRemoteId,
                                @NonNull CreateCrmLeadBuilder lead,
-                               @NonNull CrmStageWrite stage);
+                               @NonNull List<CrmStageWrite> stages);
 
     // ── activities ───────────────────────────────────────────────────────────
 

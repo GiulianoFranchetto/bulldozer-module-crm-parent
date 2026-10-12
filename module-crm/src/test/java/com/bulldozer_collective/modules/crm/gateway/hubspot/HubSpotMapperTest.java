@@ -57,15 +57,16 @@ class HubSpotMapperTest {
     }
 
     @Test
-    @DisplayName("a deal is created in its container's pipeline; an update never touches the pipeline")
+    @DisplayName("a deal is created in its container's pipeline with every stage value; an update never touches the pipeline")
     void dealWrite() {
         var deal = SaveCrmDealBuilder.builder().name("Acme").amount(new BigDecimal("10")).build();
-        var stage = new CrmStageWrite("bdz_stage", "signed");
+        var stages = List.of(new CrmStageWrite("bdz_stage", "signed"), new CrmStageWrite("dealstage", "123"));
 
-        assertThat(HubSpotMapper.deal(deal, "default", stage))
-                .containsOnlyKeys("dealname", "amount", "pipeline", "bdz_stage")
-                .containsEntry("pipeline", "default");
-        assertThat(HubSpotMapper.deal(deal, null, null)).containsOnlyKeys("dealname", "amount");
+        assertThat(HubSpotMapper.deal(deal, "default", stages))
+                .containsOnlyKeys("dealname", "amount", "pipeline", "bdz_stage", "dealstage")
+                .containsEntry("pipeline", "default")
+                .containsEntry("dealstage", "123");
+        assertThat(HubSpotMapper.deal(deal, null, List.of())).containsOnlyKeys("dealname", "amount");
     }
 
     @Test
@@ -80,7 +81,7 @@ class HubSpotMapperTest {
 
         var lead = CreateCrmLeadBuilder.builder()
                 .name("Jane").contactId("42").stage(CrmLeadStage.CRM_LEAD_STAGE_NEW).build();
-        assertThat(HubSpotMapper.lead(lead, "lead-pipeline", new CrmStageWrite("hs_pipeline_stage", "new")))
+        assertThat(HubSpotMapper.lead(lead, "lead-pipeline", List.of(new CrmStageWrite("hs_pipeline_stage", "new"))))
                 .containsOnlyKeys("hs_lead_name", "hs_pipeline", "hs_pipeline_stage");
     }
 
