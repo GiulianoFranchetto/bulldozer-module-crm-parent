@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import tools.jackson.databind.json.JsonMapper;
 
-/** Builds a {@link HubSpotClient} bound to one session: its token, and its account's share of the throttle. */
+/** Builds a {@link HubSpotClient} bound to one session: its token, and its connection's throttle. */
 @Service
 @RequiredArgsConstructor
 public class HubSpotClientFactory {

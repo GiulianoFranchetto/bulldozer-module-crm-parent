@@ -27,7 +27,7 @@ bulldozer:
   crm:
     hubspot:
       # An OAuth app gets roughly 110 requests / 10 s per installed account. 100ms between two calls of the same
-      # account keeps its rate just under that whatever the number of requests in flight. The retry path keys off
+      # connection keeps its rate just under that whatever the number of requests in flight. The retry path keys off
       # HubSpot's own Retry-After header, so this is a safety margin rather than the actual quota.
       min-request-interval: 100ms
       # Every HubSpot call runs inside a caller's request: retry briefly, then give up rather than hang.

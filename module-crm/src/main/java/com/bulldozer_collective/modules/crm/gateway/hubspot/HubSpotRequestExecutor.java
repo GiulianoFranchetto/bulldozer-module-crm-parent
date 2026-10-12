@@ -30,9 +30,11 @@ import static com.bulldozer_collective.modules.crm.configurations.CrmLogContext.
  *
  * <p>Two mechanisms, in this order:
  * <ol>
- *   <li>a throttle per HubSpot account, shared across threads, so each account's rate stays under its quota
- *       whatever the number of requests in flight — and one busy account never slows another down. A call whose
- *       turn is further away than {@code maxBackoff} is refused ({@code 502}) rather than left sleeping;</li>
+ *   <li>a throttle per connection, shared across threads, so each connection's rate stays under its account's
+ *       quota whatever the number of requests in flight — and one busy connection never slows another down. Two
+ *       projects connected to the same HubSpot account get a throttle each for one quota: the {@code 429} retry
+ *       below covers that rare case. A call whose turn is further away than {@code maxBackoff} is refused
+ *       ({@code 502}) rather than left sleeping;</li>
  *   <li>a bounded retry that honours HubSpot's {@code Retry-After} header and otherwise backs off
  *       exponentially. Bounded on purpose, and with a short ceiling: the caller is waiting on the other end.</li>
  * </ol>
@@ -52,15 +54,15 @@ public class HubSpotRequestExecutor {
     private final BulldozerLogger logger;
 
     /**
-     * Per account, the next epoch-milli at which a call is allowed; shared by every thread. One entry per connection
+     * Per connection, the next epoch-milli at which a call is allowed; shared by every thread. One entry per connection
      * ever called, a handful of bytes each: there is at most one connection per project and platform.
      */
     private final Map<String, AtomicLong> nextAllowedAt = new ConcurrentHashMap<>();
 
     /**
-     * @param account    the HubSpot account the call is made for, keying its throttle.
+     * @param account    the connection the call is made for, keying its throttle.
      * @param idempotent whether the call may be replayed after a timeout or a {@code 5xx}.
-     * @throws CrmUpstreamException when the account's throttle is saturated.
+     * @throws CrmUpstreamException when the connection's throttle is saturated.
      */
     public <T> T execute(@NonNull String account,
                          @NonNull String description,
