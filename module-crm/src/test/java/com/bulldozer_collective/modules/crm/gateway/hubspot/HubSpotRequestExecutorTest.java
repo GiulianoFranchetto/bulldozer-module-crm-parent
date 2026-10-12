@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,7 +35,7 @@ class HubSpotRequestExecutorTest {
     void retriesOnTooManyRequests() {
         var attempts = new AtomicInteger();
 
-        var result = this.executor.execute("test", () -> {
+        var result = this.executor.execute("test", true, () -> {
             if (attempts.incrementAndGet() < 3) {
                 throw tooManyRequests(null);
             }
@@ -50,7 +51,7 @@ class HubSpotRequestExecutorTest {
     void honoursRetryAfterHeader() {
         var attempts = new AtomicInteger();
 
-        var result = this.executor.execute("test", () -> {
+        var result = this.executor.execute("test", true, () -> {
             if (attempts.incrementAndGet() == 1) {
                 throw tooManyRequests("2");
             }
@@ -66,7 +67,7 @@ class HubSpotRequestExecutorTest {
     void retriesOnServerError() {
         var attempts = new AtomicInteger();
 
-        var result = this.executor.execute("test", () -> {
+        var result = this.executor.execute("test", true, () -> {
             if (attempts.incrementAndGet() == 1) {
                 throw HttpServerErrorException.create(HttpStatus.BAD_GATEWAY, "bad gateway",
                         HttpHeaders.EMPTY, new byte[0], null);
@@ -83,7 +84,7 @@ class HubSpotRequestExecutorTest {
     void doesNotRetryOnClientError() {
         var attempts = new AtomicInteger();
 
-        assertThatThrownBy(() -> this.executor.execute("test", () -> {
+        assertThatThrownBy(() -> this.executor.execute("test", true, () -> {
             attempts.incrementAndGet();
             throw HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "bad request",
                     HttpHeaders.EMPTY, new byte[0], null);
@@ -97,13 +98,56 @@ class HubSpotRequestExecutorTest {
     void givesUpAfterMaxRetries() {
         var attempts = new AtomicInteger();
 
-        assertThatThrownBy(() -> this.executor.execute("test", () -> {
+        assertThatThrownBy(() -> this.executor.execute("test", true, () -> {
             attempts.incrementAndGet();
             throw tooManyRequests(null);
         })).isInstanceOf(HttpClientErrorException.class);
 
         // maxRetries = 3, so four attempts in total.
         assertThat(attempts.get()).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("a create is not replayed after a 5xx: HubSpot may have created the record already")
+    void doesNotReplayNonIdempotentCallOnServerError() {
+        var attempts = new AtomicInteger();
+
+        assertThatThrownBy(() -> this.executor.execute("test", false, () -> {
+            attempts.incrementAndGet();
+            throw HttpServerErrorException.create(HttpStatus.BAD_GATEWAY, "bad gateway",
+                    HttpHeaders.EMPTY, new byte[0], null);
+        })).isInstanceOf(HttpServerErrorException.class);
+
+        assertThat(attempts.get()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("a create is not replayed after a timeout: the request may have reached HubSpot")
+    void doesNotReplayNonIdempotentCallOnTimeout() {
+        var attempts = new AtomicInteger();
+
+        assertThatThrownBy(() -> this.executor.execute("test", false, () -> {
+            attempts.incrementAndGet();
+            throw new ResourceAccessException("Read timed out");
+        })).isInstanceOf(ResourceAccessException.class);
+
+        assertThat(attempts.get()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("a create refused with a 429 is retried: HubSpot did nothing")
+    void retriesNonIdempotentCallOnTooManyRequests() {
+        var attempts = new AtomicInteger();
+
+        var result = this.executor.execute("test", false, () -> {
+            if (attempts.incrementAndGet() == 1) {
+                throw tooManyRequests(null);
+            }
+            return "ok";
+        });
+
+        assertThat(result).isEqualTo("ok");
+        assertThat(attempts.get()).isEqualTo(2);
     }
 
     private static HttpClientErrorException tooManyRequests(String retryAfterSeconds) {

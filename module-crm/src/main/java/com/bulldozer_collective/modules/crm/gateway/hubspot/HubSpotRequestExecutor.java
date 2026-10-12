@@ -35,6 +35,10 @@ import static com.bulldozer_collective.modules.crm.configurations.CrmLogContext.
  *
  * <p>A {@code 4xx} other than {@code 429} is not retried: the request is wrong, and repeating it wastes quota.
  * Neither is a write that HubSpot rejected as a duplicate ({@code 409}): retrying it could only fail again.
+ *
+ * <p>A {@code 429} is retried for every call: HubSpot refused it, so it did nothing. A timeout or a {@code 5xx} is
+ * retried only for an idempotent call — a create may have succeeded behind it, and replaying it would duplicate the
+ * record in the customer's CRM, where the bridge keeps nothing to deduplicate against.
  */
 @Component
 @RequiredArgsConstructor
@@ -46,7 +50,8 @@ public class HubSpotRequestExecutor {
     /** Next epoch-milli at which a call is allowed; shared by every thread. */
     private final AtomicLong nextAllowedAt = new AtomicLong(0);
 
-    public <T> T execute(@NonNull String description, @NonNull Supplier<T> call) {
+    /** @param idempotent whether the call may be replayed after a timeout or a {@code 5xx}. */
+    public <T> T execute(@NonNull String description, boolean idempotent, @NonNull Supplier<T> call) {
         var attempts = this.properties.maxRetries() + 1;
         RuntimeException last = null;
 
@@ -62,7 +67,11 @@ public class HubSpotRequestExecutor {
                 last = e;
                 this.pause(description, attempt, retryAfter(e.getResponseHeaders()));
             } catch (HttpServerErrorException | ResourceAccessException e) {
-                // 5xx and read timeouts are the transient cases worth another attempt.
+                // 5xx and read timeouts are the transient cases worth another attempt — unless the call may have
+                // taken effect anyway.
+                if (!idempotent) {
+                    throw e;
+                }
                 last = e;
                 this.pause(description, attempt, null);
             }

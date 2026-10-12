@@ -58,26 +58,38 @@ public class HubSpotClient {
     public <T> T get(@NonNull List<String> segments,
                      @NonNull Map<String, String> query,
                      @NonNull TypeReference<T> type) {
-        return this.exchange(HttpMethod.GET, segments, query, null, type);
+        return this.exchange(HttpMethod.GET, segments, query, null, type, true);
     }
 
+    /**
+     * A write. A {@code POST} creates a record, so it is never replayed after a timeout or a {@code 5xx}: HubSpot
+     * may have created it already, and a replay would duplicate it in the customer's CRM.
+     */
     public <T> T send(@NonNull HttpMethod method,
                       @NonNull List<String> segments,
                       @NonNull Object body,
                       @NonNull TypeReference<T> type) {
-        return this.exchange(method, segments, Map.of(), body, type);
+        return this.exchange(method, segments, Map.of(), body, type, method != HttpMethod.POST);
     }
 
-    /** For the calls whose answer carries nothing the bridge reads (associations). */
+    /** A {@code POST …/search}: a read, replayed like any other. */
+    public <T> T search(@NonNull List<String> segments,
+                        @NonNull Object body,
+                        @NonNull TypeReference<T> type) {
+        return this.exchange(HttpMethod.POST, segments, Map.of(), body, type, true);
+    }
+
+    /** For the calls whose answer carries nothing the bridge reads (associations, by {@code PUT} / {@code DELETE}). */
     public void call(@NonNull HttpMethod method, @NonNull List<String> segments) {
-        this.exchange(method, segments, Map.of(), null, null);
+        this.exchange(method, segments, Map.of(), null, null, method != HttpMethod.POST);
     }
 
     private <T> @Nullable T exchange(@NonNull HttpMethod method,
                                      @NonNull List<String> segments,
                                      @NonNull Map<String, String> query,
                                      @Nullable Object body,
-                                     @Nullable TypeReference<T> type) {
+                                     @Nullable TypeReference<T> type,
+                                     boolean idempotent) {
         var uri = uri(segments, query);
         var headers = new HttpHeaders();
         headers.setBearerAuth(this.accessToken);
@@ -91,7 +103,7 @@ public class HubSpotClient {
 
         try {
             // The description names the method and path only: never the query string, never the token.
-            var raw = this.executor.execute(method + " " + uri.getPath(),
+            var raw = this.executor.execute(method + " " + uri.getPath(), idempotent,
                     () -> this.restTemplate.exchange(uri, method, entity, String.class).getBody());
             return type == null || raw == null || raw.isBlank() ? null : this.jsonMapper.readValue(raw, type);
         } catch (HttpClientErrorException e) {

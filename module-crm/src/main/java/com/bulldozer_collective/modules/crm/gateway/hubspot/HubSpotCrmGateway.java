@@ -321,8 +321,7 @@ public class HubSpotCrmGateway implements CrmGateway {
         var client = this.clientFactory.create(session.accessToken());
         HubSpotResults<HubSpotObject> response;
         if (query.filtered() || equals != null) {
-            response = client.send(HttpMethod.POST, objectPath(type, "search"),
-                    searchBody(query, equals, properties), OBJECTS);
+            response = client.search(objectPath(type, "search"), searchBody(query, equals, properties), OBJECTS);
         } else {
             var params = new HashMap<String, String>();
             params.put("limit", String.valueOf(query.limit()));
