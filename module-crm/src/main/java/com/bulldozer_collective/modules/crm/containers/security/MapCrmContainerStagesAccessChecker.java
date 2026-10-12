@@ -7,9 +7,9 @@ import com.bulldozer_collective.security.services.SecurityTools;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ImportCrmContainerAccessChecker extends DefaultAccessChecker {
+public class MapCrmContainerStagesAccessChecker extends DefaultAccessChecker {
 
-    public ImportCrmContainerAccessChecker(SecurityTools tools, BulldozerLogger logger) {
+    public MapCrmContainerStagesAccessChecker(SecurityTools tools, BulldozerLogger logger) {
         super(tools, logger);
     }
 

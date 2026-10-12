@@ -31,14 +31,14 @@ project. `tracking` was aligned first; this module closes the gap.
 | `GET /crm/connections/{connectionId}` | ✓ | ✓ | ✓ | ✓ |  |
 | `DELETE /crm/connections/{connectionId}` | ✓ | ✓ | ✓ | ✓ | Deletes its containers and stages too |
 | `GET /crm/{connectionId}/properties` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
-| `POST /crm/{connectionId}/containers` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `POST /crm/{connectionId}/containers` | ✓ | ✓ | ✓ | ✓ | Calls the CRM; imports several containers in one transaction |
 | `GET /crm/{connectionId}/containers` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `GET /crm/{connectionId}/containers/{containerId}` | ✓ | ✓ | ✓ | ✓ |  |
 | `DELETE /crm/{connectionId}/containers/{containerId}` | ✓ | ✓ | ✓ | ✓ | Deletes its stages too |
 | `PUT /crm/{connectionId}/containers/{containerId}/stage-source` | ✓ | ✓ | ✓ | ✓ | Calls the CRM; replaces every stage and mapping |
 | `POST /crm/{connectionId}/containers/{containerId}/refresh` | ✓ | ✓ | ✓ | ✓ | Calls the CRM; drops the mappings of vanished stages |
 | `GET /crm/{connectionId}/stages` | ✓ | ✓ | ✓ | ✓ |  |
-| `PUT /crm/{connectionId}/stages/{stageId}/mapping` | ✓ | ✓ | ✓ | ✓ |  |
+| `PUT /crm/{connectionId}/stages/mapping` | ✓ | ✓ | ✓ | ✓ | Maps several stages in one transaction |
 | `GET /crm/{connectionId}/contacts` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `GET /crm/{connectionId}/contacts/{id}` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `POST /crm/{connectionId}/contacts` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |

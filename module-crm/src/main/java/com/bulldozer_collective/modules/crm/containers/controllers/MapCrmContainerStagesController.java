@@ -1,9 +1,9 @@
 package com.bulldozer_collective.modules.crm.containers.controllers;
 
 import com.bulldozer_collective.modules.crm.api.CrmContainerParam;
-import com.bulldozer_collective.modules.crm.api.GetCrmContainerStageResponse;
-import com.bulldozer_collective.modules.crm.api.MapCrmContainerStageRequest;
-import com.bulldozer_collective.modules.crm.containers.security.MapCrmContainerStageAccessChecker;
+import com.bulldozer_collective.modules.crm.api.ListCrmContainerStagesResponse;
+import com.bulldozer_collective.modules.crm.api.MapCrmContainerStagesRequest;
+import com.bulldozer_collective.modules.crm.containers.security.MapCrmContainerStagesAccessChecker;
 import com.bulldozer_collective.modules.crm.containers.services.CrmContainerStageConverter;
 import com.bulldozer_collective.modules.crm.containers.services.CrmContainerStageUpdater;
 import com.bulldozer_collective.modules.crm.containers.services.MapCrmContainerStageBuilder;
@@ -24,30 +24,31 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/crm/{connectionId}/stages")
-public class MapCrmContainerStageController {
+public class MapCrmContainerStagesController {
 
     private final CrmContainerStageUpdater updater;
     private final CrmContainerStageConverter converter;
-    private final MapCrmContainerStageAccessChecker accessChecker;
+    private final MapCrmContainerStagesAccessChecker accessChecker;
 
-    @PutMapping("/{stageId}/mapping")
-    public GetCrmContainerStageResponse map(@JwtRequestContext RequestContext context,
-                                            @PathVariable @NonNull UUID connectionId,
-                                            @PathVariable @NonNull UUID stageId,
-                                            @Valid @NonNull CrmContainerParam param,
-                                            @Valid @RequestBody @NonNull MapCrmContainerStageRequest request) {
+    @PutMapping("/mapping")
+    public ListCrmContainerStagesResponse map(@JwtRequestContext RequestContext context,
+                                              @PathVariable @NonNull UUID connectionId,
+                                              @Valid @NonNull CrmContainerParam param,
+                                              @Valid @RequestBody @NonNull MapCrmContainerStagesRequest request) {
         this.accessChecker.checkAccess(context);
-        var stage = this.updater.map(
+        var stages = this.updater.map(
                 Objects.requireNonNull(context.targetCustomerId()),
                 Objects.requireNonNull(context.projectId()),
                 connectionId,
                 param.containerId(),
-                stageId,
-                MapCrmContainerStageBuilder.builder()
-                        .dealStage(request.dealStage())
-                        .leadStage(request.leadStage())
-                        .writeDefault(request.writeDefault())
-                        .build());
-        return new GetCrmContainerStageResponse(this.converter.convert(stage));
+                request.mappings().stream()
+                        .map(mapping -> MapCrmContainerStageBuilder.builder()
+                                .stageId(mapping.stageId())
+                                .dealStage(mapping.dealStage())
+                                .leadStage(mapping.leadStage())
+                                .writeDefault(mapping.writeDefault())
+                                .build())
+                        .toList());
+        return new ListCrmContainerStagesResponse(this.converter.convert(stages));
     }
 }

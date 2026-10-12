@@ -1,8 +1,8 @@
 package com.bulldozer_collective.modules.crm.containers.controllers;
 
-import com.bulldozer_collective.modules.crm.api.CreateCrmContainerResponse;
-import com.bulldozer_collective.modules.crm.api.ImportCrmContainerRequest;
-import com.bulldozer_collective.modules.crm.containers.security.ImportCrmContainerAccessChecker;
+import com.bulldozer_collective.modules.crm.api.CreateCrmContainersResponse;
+import com.bulldozer_collective.modules.crm.api.ImportCrmContainersRequest;
+import com.bulldozer_collective.modules.crm.containers.security.ImportCrmContainersAccessChecker;
 import com.bulldozer_collective.modules.crm.containers.services.CrmContainerConverter;
 import com.bulldozer_collective.modules.crm.containers.services.CrmContainerFactory;
 import com.bulldozer_collective.modules.crm.containers.services.ImportCrmContainerBuilder;
@@ -26,27 +26,29 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/crm/{connectionId}/containers")
-public class ImportCrmContainerController {
+public class ImportCrmContainersController {
 
     private final CrmContainerFactory factory;
     private final CrmContainerConverter converter;
-    private final ImportCrmContainerAccessChecker accessChecker;
+    private final ImportCrmContainersAccessChecker accessChecker;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CreateCrmContainerResponse create(@JwtRequestContext RequestContext context,
-                                             @PathVariable @NonNull UUID connectionId,
-                                             @Valid @RequestBody @NonNull ImportCrmContainerRequest request) throws NoTokenException {
+    public CreateCrmContainersResponse create(@JwtRequestContext RequestContext context,
+                                              @PathVariable @NonNull UUID connectionId,
+                                              @Valid @RequestBody @NonNull ImportCrmContainersRequest request) throws NoTokenException {
         this.accessChecker.checkAccess(context);
-        var container = this.factory.create(
+        var containers = this.factory.create(
                 Objects.requireNonNull(context.targetCustomerId()),
                 Objects.requireNonNull(context.projectId()),
                 connectionId,
-                ImportCrmContainerBuilder.builder()
-                        .type(request.type())
-                        .remoteId(request.remoteId())
-                        .stagePropertyName(request.stagePropertyName())
-                        .build());
-        return new CreateCrmContainerResponse(this.converter.convert(container));
+                request.containers().stream()
+                        .map(container -> ImportCrmContainerBuilder.builder()
+                                .type(container.type())
+                                .remoteId(container.remoteId())
+                                .stagePropertyName(container.stagePropertyName())
+                                .build())
+                        .toList());
+        return new CreateCrmContainersResponse(this.converter.convert(containers));
     }
 }

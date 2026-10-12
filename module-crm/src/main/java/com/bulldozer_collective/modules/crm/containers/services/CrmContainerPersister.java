@@ -9,6 +9,7 @@ import com.bulldozer_collective.modules.crm.containers.data.CrmContainerStageRep
 import com.bulldozer_collective.modules.crm.gateway.CrmStageOption;
 import com.bulldozer_collective.logging.BulldozerLogger;
 import com.bulldozer_collective.shared.exceptions.ConflictException;
+import com.bulldozer_collective.shared.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
@@ -35,32 +36,47 @@ public class CrmContainerPersister {
     private final CrmContainerStageRepository stageRepository;
     private final BulldozerLogger logger;
 
-    /** @throws ConflictException when the pipeline is already imported on that connection. */
+    /** A container to import, with everything already read from the CRM. */
+    public record NewContainer(@NonNull CrmContainerType type,
+                               @NonNull String remoteId,
+                               @NonNull String name,
+                               @NonNull String stagePropertyName,
+                               @NonNull List<CrmStageOption> options) {
+    }
+
+    /** @throws ConflictException when a container is already imported on that connection; nothing is imported. */
     @Transactional
-    public @NonNull CrmContainerEntity create(@NonNull CrmConnectionEntity connection,
-                                              @NonNull CrmContainerType type,
-                                              @NonNull String remoteId,
-                                              @NonNull String name,
-                                              @NonNull String stagePropertyName,
-                                              @NonNull List<CrmStageOption> options) {
-        if (this.containerRepository.existsByCustomerIdAndProjectIdAndConnection_IdAndTypeAndRemoteId(
-                connection.getCustomerId(), connection.getProjectId(), connection.getId(), type, remoteId)) {
-            throw new ConflictException("Pipeline '%s' is already imported".formatted(remoteId));
+    public @NonNull List<CrmContainerEntity> create(@NonNull CrmConnectionEntity connection,
+                                                    @NonNull List<NewContainer> containers) {
+        var duplicates = containers.stream()
+                .filter(container -> this.containerRepository
+                        .existsByCustomerIdAndProjectIdAndConnection_IdAndTypeAndRemoteId(connection.getCustomerId(),
+                                connection.getProjectId(), connection.getId(), container.type(), container.remoteId()))
+                .map(NewContainer::remoteId)
+                .toList();
+        if (!duplicates.isEmpty()) {
+            throw new ConflictException("Already imported: " + String.join(", ", duplicates));
         }
 
-        var container = new CrmContainerEntity();
-        container.setCustomerId(connection.getCustomerId());
-        container.setProjectId(connection.getProjectId());
-        container.setConnection(connection);
-        container.setType(type);
-        container.setRemoteId(remoteId);
-        container.setName(name);
-        container.setStagePropertyName(stagePropertyName);
-        var saved = this.containerRepository.save(container);
-        this.stageRepository.saveAll(options.stream().map(option -> newStage(saved, option)).toList());
+        var saved = new ArrayList<CrmContainerEntity>();
+        var stages = new ArrayList<CrmContainerStageEntity>();
+        for (var container : containers) {
+            var entity = new CrmContainerEntity();
+            entity.setCustomerId(connection.getCustomerId());
+            entity.setProjectId(connection.getProjectId());
+            entity.setConnection(connection);
+            entity.setType(container.type());
+            entity.setRemoteId(container.remoteId());
+            entity.setName(container.name());
+            entity.setStagePropertyName(container.stagePropertyName());
+            var persisted = this.containerRepository.save(entity);
+            saved.add(persisted);
+            container.options().forEach(option -> stages.add(newStage(persisted, option)));
+        }
+        this.stageRepository.saveAll(stages);
 
         this.logger.info(op("CRM-003", connection.getCustomerId(), connection.getProjectId())
-                + "Imported %s pipeline %s as container %s", type, remoteId, saved.getId());
+                + "Imported %d containers on connection %s", saved.size(), connection.getId());
         return saved;
     }
 
@@ -120,39 +136,46 @@ public class CrmContainerPersister {
     }
 
     /**
-     * Sets the mapping of one stage. Marking it {@code writeDefault} takes the mark off every other stage mapped
-     * to the same Bulldozer stage in the container.
+     * Replaces the mapping of every listed stage. A write default given here takes the mark off every other stage
+     * of the container mapped to the same Bulldozer stage; an unmapped stage is never a write default.
      *
-     * <p>{@code containerId} is passed explicitly: the stage was loaded outside this transaction, and its lazy
-     * container cannot be read here.
+     * @return every stage of the container, after the update.
+     * @throws NotFoundException when a stage is not in the container; nothing is changed.
      */
     @Transactional
-    public @NonNull CrmContainerStageEntity map(@NonNull UUID containerId,
-                                                @NonNull CrmContainerStageEntity stage,
-                                                @NonNull MapCrmContainerStageBuilder mapping) {
-        stage.setDealStage(mapping.dealStage());
-        stage.setLeadStage(mapping.leadStage());
-        var mapped = mapping.dealStage() != null || mapping.leadStage() != null;
-        stage.setWriteDefault(mapped && mapping.writeDefault());
+    public @NonNull List<CrmContainerStageEntity> map(@NonNull UUID customerId,
+                                                      @NonNull UUID projectId,
+                                                      @NonNull UUID containerId,
+                                                      @NonNull List<MapCrmContainerStageBuilder> mappings) {
+        var stages = this.stageRepository.findAllByCustomerIdAndProjectIdAndContainer_IdOrderByDisplayOrderAsc(
+                customerId, projectId, containerId);
+        var byId = stages.stream().collect(Collectors.toMap(CrmContainerStageEntity::getId, Function.identity()));
 
-        if (stage.isWriteDefault()) {
-            var others = this.stageRepository
-                    .findAllByCustomerIdAndProjectIdAndContainer_IdOrderByDisplayOrderAsc(
-                            stage.getCustomerId(), stage.getProjectId(), containerId)
-                    .stream()
-                    .filter(other -> !other.getId().equals(stage.getId())
-                            && other.getDealStage() == stage.getDealStage()
-                            && other.getLeadStage() == stage.getLeadStage()
-                            && other.isWriteDefault())
-                    .toList();
-            others.forEach(other -> other.setWriteDefault(false));
-            this.stageRepository.saveAll(others);
+        for (var mapping : mappings) {
+            var stage = byId.get(mapping.stageId());
+            if (stage == null) {
+                throw new NotFoundException("No stage " + mapping.stageId() + " in container " + containerId);
+            }
+            stage.setDealStage(mapping.dealStage());
+            stage.setLeadStage(mapping.leadStage());
+            stage.setWriteDefault(mapping.mapped() && mapping.writeDefault());
         }
 
-        var saved = this.stageRepository.save(stage);
-        this.logger.info(op("CRM-003", stage.getCustomerId(), stage.getProjectId())
-                + "Stage %s of container %s mapped to %s", stage.getRemoteId(), containerId,
-                mapping.dealStage() != null ? mapping.dealStage() : mapping.leadStage());
+        for (var mapping : mappings) {
+            var chosen = byId.get(mapping.stageId());
+            if (!chosen.isWriteDefault()) {
+                continue;
+            }
+            stages.stream()
+                    .filter(other -> other != chosen
+                            && other.getDealStage() == chosen.getDealStage()
+                            && other.getLeadStage() == chosen.getLeadStage())
+                    .forEach(other -> other.setWriteDefault(false));
+        }
+
+        var saved = this.stageRepository.saveAll(stages);
+        this.logger.info(op("CRM-003", customerId, projectId) + "Mapped %d stages of container %s",
+                mappings.size(), containerId);
         return saved;
     }
 
