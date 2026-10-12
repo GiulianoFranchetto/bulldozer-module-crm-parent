@@ -193,7 +193,7 @@ public class HubSpotCrmGateway implements CrmGateway {
                         .map(option -> new CrmStageOption(option.value(), option.label(), option.displayOrder()))
                         .toList())
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "propertyName: '%s' is not a property of this HubSpot account".formatted(propertyName)));
+                        "stagePropertyName: '%s' is not a property of this HubSpot account".formatted(propertyName)));
     }
 
     // ── deals ────────────────────────────────────────────────────────────────
@@ -275,7 +275,7 @@ public class HubSpotCrmGateway implements CrmGateway {
     public @NonNull CrmPage<CrmActivity> listActivities(@NonNull CrmSession session,
                                                         @NonNull CrmActivityType type,
                                                         @NonNull ListCrmObjectsBuilder query) {
-        return this.list(session, HubSpotObjectTypes.of(type), query, null,
+        return this.list(session, type.objectType(), query, null,
                 HubSpotMapper.ActivityProperties.of(type).all(), object -> HubSpotMapper.activity(type, object));
     }
 
@@ -284,12 +284,12 @@ public class HubSpotCrmGateway implements CrmGateway {
                                             @NonNull CrmActivityType type,
                                             @NonNull String id) {
         return HubSpotMapper.activity(type,
-                this.get(session, HubSpotObjectTypes.of(type), id, HubSpotMapper.ActivityProperties.of(type).all()));
+                this.get(session, type.objectType(), id, HubSpotMapper.ActivityProperties.of(type).all()));
     }
 
     @Override
     public @NonNull String createActivity(@NonNull CrmSession session, @NonNull CreateCrmActivityBuilder activity) {
-        return this.create(session, HubSpotObjectTypes.of(activity.type()), HubSpotMapper.activity(activity),
+        return this.create(session, activity.type().objectType(), HubSpotMapper.activity(activity),
                 List.of());
     }
 

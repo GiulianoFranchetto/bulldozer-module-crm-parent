@@ -2,7 +2,6 @@ package com.bulldozer_collective.modules.crm.activities.services;
 
 import com.bulldozer_collective.modules.crm.api.CrmActivity;
 import com.bulldozer_collective.modules.crm.api.CrmObjectRef;
-import com.bulldozer_collective.modules.crm.api.CrmObjectType;
 import com.bulldozer_collective.modules.crm.gateway.CrmGatewayResolver;
 import com.bulldozer_collective.modules.crm.gateway.CrmSessionOpener;
 import com.bulldozer_collective.modules.crm.gateway.NoTokenException;
@@ -40,7 +39,7 @@ public class CrmActivityFactory {
         this.logger.info(op("CRM-004", customerId, projectId) + "Created %s %s on connection %s",
                 activity.type(), id, connectionId);
 
-        var self = new CrmObjectRef(objectType(activity), id);
+        var self = new CrmObjectRef(activity.type().objectType(), id);
         for (var target : activity.associations()) {
             try {
                 gateway.associate(session, self, target);
@@ -52,15 +51,5 @@ public class CrmActivityFactory {
             }
         }
         return gateway.getActivity(session, activity.type(), id);
-    }
-
-    private static CrmObjectType objectType(@NonNull CreateCrmActivityBuilder activity) {
-        return switch (activity.type()) {
-            case CRM_ACTIVITY_TYPE_CALL -> CrmObjectType.CRM_OBJECT_TYPE_CALL;
-            case CRM_ACTIVITY_TYPE_EMAIL -> CrmObjectType.CRM_OBJECT_TYPE_EMAIL;
-            case CRM_ACTIVITY_TYPE_MEETING -> CrmObjectType.CRM_OBJECT_TYPE_MEETING;
-            case CRM_ACTIVITY_TYPE_NOTE -> CrmObjectType.CRM_OBJECT_TYPE_NOTE;
-            case CRM_ACTIVITY_TYPE_TASK -> CrmObjectType.CRM_OBJECT_TYPE_TASK;
-        };
     }
 }

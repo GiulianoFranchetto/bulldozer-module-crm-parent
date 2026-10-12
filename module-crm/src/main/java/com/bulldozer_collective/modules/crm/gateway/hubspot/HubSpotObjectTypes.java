@@ -1,6 +1,5 @@
 package com.bulldozer_collective.modules.crm.gateway.hubspot;
 
-import com.bulldozer_collective.modules.crm.api.CrmActivityType;
 import com.bulldozer_collective.modules.crm.api.CrmObjectType;
 import org.jspecify.annotations.NonNull;
 
@@ -39,16 +38,6 @@ final class HubSpotObjectTypes {
             case CRM_OBJECT_TYPE_MEETING -> "meeting";
             case CRM_OBJECT_TYPE_NOTE -> "note";
             case CRM_OBJECT_TYPE_TASK -> "task";
-        };
-    }
-
-    static @NonNull CrmObjectType of(@NonNull CrmActivityType type) {
-        return switch (type) {
-            case CRM_ACTIVITY_TYPE_CALL -> CrmObjectType.CRM_OBJECT_TYPE_CALL;
-            case CRM_ACTIVITY_TYPE_EMAIL -> CrmObjectType.CRM_OBJECT_TYPE_EMAIL;
-            case CRM_ACTIVITY_TYPE_MEETING -> CrmObjectType.CRM_OBJECT_TYPE_MEETING;
-            case CRM_ACTIVITY_TYPE_NOTE -> CrmObjectType.CRM_OBJECT_TYPE_NOTE;
-            case CRM_ACTIVITY_TYPE_TASK -> CrmObjectType.CRM_OBJECT_TYPE_TASK;
         };
     }
 }

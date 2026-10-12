@@ -3,13 +3,14 @@ package com.bulldozer_collective.modules.crm.containers.services;
 import com.bulldozer_collective.modules.crm.api.CrmContainerStage;
 import com.bulldozer_collective.modules.crm.containers.data.CrmContainerStageEntity;
 import com.bulldozer_collective.shared.ModelConverter;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CrmContainerStageConverter implements ModelConverter<CrmContainerStageEntity, CrmContainerStage> {
 
     @Override
-    public CrmContainerStage convert(CrmContainerStageEntity e) {
+    public @NonNull CrmContainerStage convert(@NonNull CrmContainerStageEntity e) {
         return CrmContainerStage.builder()
                 .id(e.getId())
                 .remoteId(e.getRemoteId())

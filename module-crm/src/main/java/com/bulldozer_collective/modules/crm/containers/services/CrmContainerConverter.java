@@ -3,13 +3,14 @@ package com.bulldozer_collective.modules.crm.containers.services;
 import com.bulldozer_collective.modules.crm.api.CrmContainer;
 import com.bulldozer_collective.modules.crm.containers.data.CrmContainerEntity;
 import com.bulldozer_collective.shared.ModelConverter;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CrmContainerConverter implements ModelConverter<CrmContainerEntity, CrmContainer> {
 
     @Override
-    public CrmContainer convert(CrmContainerEntity e) {
+    public @NonNull CrmContainer convert(@NonNull CrmContainerEntity e) {
         return CrmContainer.builder()
                 .id(e.getId())
                 .type(e.getType())
