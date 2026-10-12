@@ -19,5 +19,5 @@ public record CreateCrmActivityRequest(@NonNull @NotNull CrmActivityType type,
                                        @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String title,
                                        @Nullable @Size(max = CrmConstraints.LONG_TEXT) String body,
                                        @Nullable @Size(max = 32) String status,
-                                       @Nullable @Size(max = 50) List<@Valid CrmObjectRef> associations) {
+                                       @Nullable @Size(max = 50) List<@NotNull @Valid CrmObjectRef> associations) {
 }
