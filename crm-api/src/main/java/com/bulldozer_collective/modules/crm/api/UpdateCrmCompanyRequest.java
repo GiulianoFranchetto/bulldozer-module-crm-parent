@@ -9,6 +9,5 @@ public record UpdateCrmCompanyRequest(@Nullable @Size(max = CrmConstraints.SHORT
                                       @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String industry,
                                       @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String phone,
                                       @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String city,
-                                      @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String country,
-                                      @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String ownerId) {
+                                      @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String country) {
 }

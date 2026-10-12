@@ -2,6 +2,7 @@ package com.bulldozer_collective.modules.crm.deals.controllers;
 
 import com.bulldozer_collective.modules.crm.api.CreateCrmDealRequest;
 import com.bulldozer_collective.modules.crm.api.CreateCrmDealResponse;
+import com.bulldozer_collective.modules.crm.api.CrmContainerParam;
 import com.bulldozer_collective.modules.crm.deals.security.CreateCrmDealAccessChecker;
 import com.bulldozer_collective.modules.crm.deals.services.CrmDealFactory;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
@@ -34,20 +35,20 @@ public class CreateCrmDealController {
     @ResponseStatus(HttpStatus.CREATED)
     public CreateCrmDealResponse create(@JwtRequestContext RequestContext context,
                                         @PathVariable @NonNull UUID connectionId,
-                                        @Valid @RequestBody @NonNull CreateCrmDealRequest request) throws NoTokenException {
+                                        @Valid @RequestBody @NonNull CreateCrmDealRequest request,
+                                        @Valid @NonNull CrmContainerParam param) throws NoTokenException {
         this.accessChecker.checkAccess(context);
         var deal = this.factory.create(
                 Objects.requireNonNull(context.targetCustomerId()),
                 Objects.requireNonNull(context.projectId()),
                 connectionId,
+                param.containerId(),
                 SaveCrmDealBuilder.builder()
                         .name(request.name())
-                        .pipelineId(request.pipelineId())
                         .stage(request.stage())
                         .amount(request.amount())
                         .currency(request.currency())
                         .closeDate(request.closeDate())
-                        .ownerId(request.ownerId())
                         .build());
         return new CreateCrmDealResponse(deal);
     }

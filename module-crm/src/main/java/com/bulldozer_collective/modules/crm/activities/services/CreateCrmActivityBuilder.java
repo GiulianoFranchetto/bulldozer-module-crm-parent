@@ -21,6 +21,5 @@ public record CreateCrmActivityBuilder(@NonNull CrmActivityType type,
                                        @Nullable String title,
                                        @Nullable String body,
                                        @Nullable String status,
-                                       @Nullable String ownerId,
                                        @NonNull List<CrmObjectRef> associations) {
 }

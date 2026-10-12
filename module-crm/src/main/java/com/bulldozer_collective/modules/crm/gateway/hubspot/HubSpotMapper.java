@@ -6,18 +6,20 @@ import com.bulldozer_collective.modules.crm.api.CrmActivityType;
 import com.bulldozer_collective.modules.crm.api.CrmCompany;
 import com.bulldozer_collective.modules.crm.api.CrmContact;
 import com.bulldozer_collective.modules.crm.api.CrmDeal;
-import com.bulldozer_collective.modules.crm.api.CrmDealProperty;
-import com.bulldozer_collective.modules.crm.api.CrmDealPropertyOption;
-import com.bulldozer_collective.modules.crm.api.CrmPipeline;
-import com.bulldozer_collective.modules.crm.api.CrmPipelineStage;
+import com.bulldozer_collective.modules.crm.api.CrmLead;
+import com.bulldozer_collective.modules.crm.api.CrmProperty;
+import com.bulldozer_collective.modules.crm.api.CrmPropertyOption;
+import com.bulldozer_collective.modules.crm.api.CrmRemoteContainer;
+import com.bulldozer_collective.modules.crm.api.CrmRemoteContainerStage;
 import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBuilder;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
-import com.bulldozer_collective.modules.crm.gateway.CrmDealRecord;
+import com.bulldozer_collective.modules.crm.gateway.CrmContainedRecord;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageWrite;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotObject;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotPipeline;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotProperty;
+import com.bulldozer_collective.modules.crm.leads.services.CreateCrmLeadBuilder;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -38,17 +40,13 @@ import java.util.Objects;
  */
 final class HubSpotMapper {
 
-    static final String OWNER = "hubspot_owner_id";
-    /** HubSpot's native deal stage; its values are stage ids, specific to each pipeline. */
-    static final String DEAL_STAGE = "dealstage";
-    static final String DEAL_PIPELINE = "pipeline";
-
-    static final List<String> CONTACT_PROPERTIES = List.of(
-            "firstname", "lastname", "email", "phone", "jobtitle", OWNER);
-    static final List<String> COMPANY_PROPERTIES = List.of(
-            "name", "domain", "industry", "phone", "city", "country", OWNER);
+    static final List<String> CONTACT_PROPERTIES = List.of("firstname", "lastname", "email", "phone", "jobtitle");
+    static final List<String> COMPANY_PROPERTIES = List.of("name", "domain", "industry", "phone", "city", "country");
     static final List<String> DEAL_PROPERTIES = List.of(
-            "dealname", "amount", "deal_currency_code", "closedate", DEAL_PIPELINE, DEAL_STAGE, OWNER);
+            "dealname", "amount", "deal_currency_code", "closedate", HubSpotContainerKind.DEALS.pipelineProperty());
+    /** The leads guide names {@code hs_lead_name} (required on create) and {@code hs_lead_type}. */
+    static final List<String> LEAD_PROPERTIES = List.of(
+            "hs_lead_name", "hs_lead_type", HubSpotContainerKind.LEADS.pipelineProperty());
 
     private HubSpotMapper() {
     }
@@ -64,7 +62,6 @@ final class HubSpotMapper {
                 .email(properties.get("email"))
                 .phone(properties.get("phone"))
                 .jobTitle(properties.get("jobtitle"))
-                .ownerId(properties.get(OWNER))
                 .createdAt(object.createdAt())
                 .updatedAt(object.updatedAt())
                 .build();
@@ -80,13 +77,12 @@ final class HubSpotMapper {
                 .phone(properties.get("phone"))
                 .city(properties.get("city"))
                 .country(properties.get("country"))
-                .ownerId(properties.get(OWNER))
                 .createdAt(object.createdAt())
                 .updatedAt(object.updatedAt())
                 .build();
     }
 
-    static @NonNull CrmDealRecord deal(@NonNull HubSpotObject object) {
+    static @NonNull CrmContainedRecord<CrmDeal> deal(@NonNull HubSpotObject object) {
         var properties = properties(object);
         var deal = CrmDeal.builder()
                 .id(Objects.requireNonNull(object.id()))
@@ -94,12 +90,24 @@ final class HubSpotMapper {
                 .amount(decimal(properties.get("amount")))
                 .currency(properties.get("deal_currency_code"))
                 .closeDate(instant(properties.get("closedate")))
-                .pipelineId(properties.get(DEAL_PIPELINE))
-                .ownerId(properties.get(OWNER))
                 .createdAt(object.createdAt())
                 .updatedAt(object.updatedAt())
                 .build();
-        return new CrmDealRecord(deal, properties);
+        return new CrmContainedRecord<>(deal, properties.get(HubSpotContainerKind.DEALS.pipelineProperty()),
+                properties);
+    }
+
+    static @NonNull CrmContainedRecord<CrmLead> lead(@NonNull HubSpotObject object) {
+        var properties = properties(object);
+        var lead = CrmLead.builder()
+                .id(Objects.requireNonNull(object.id()))
+                .name(properties.get("hs_lead_name"))
+                .type(properties.get("hs_lead_type"))
+                .createdAt(object.createdAt())
+                .updatedAt(object.updatedAt())
+                .build();
+        return new CrmContainedRecord<>(lead, properties.get(HubSpotContainerKind.LEADS.pipelineProperty()),
+                properties);
     }
 
     static @NonNull CrmActivity activity(@NonNull CrmActivityType type, @NonNull HubSpotObject object) {
@@ -112,43 +120,42 @@ final class HubSpotMapper {
                 .body(properties.get(names.body()))
                 .status(names.status() == null ? null : properties.get(names.status()))
                 .timestamp(instant(properties.get(ActivityProperties.TIMESTAMP)))
-                .ownerId(properties.get(OWNER))
                 .createdAt(object.createdAt())
                 .updatedAt(object.updatedAt())
                 .build();
     }
 
-    static @NonNull CrmPipeline pipeline(@NonNull HubSpotPipeline pipeline) {
-        var stages = pipeline.stages() == null ? List.<CrmPipelineStage>of() : pipeline.stages().stream()
+    static @NonNull CrmRemoteContainer pipeline(@NonNull HubSpotPipeline pipeline) {
+        var stages = pipeline.stages() == null ? List.<CrmRemoteContainerStage>of() : pipeline.stages().stream()
                 .filter(stage -> stage.id() != null && !Boolean.TRUE.equals(stage.archived()))
-                .map(stage -> CrmPipelineStage.builder()
-                        .id(stage.id())
-                        .label(stage.label() == null ? stage.id() : stage.label())
+                .map(stage -> CrmRemoteContainerStage.builder()
+                        .remoteId(stage.id())
+                        .name(stage.label() == null ? stage.id() : stage.label())
                         .displayOrder(stage.displayOrder() == null ? 0 : stage.displayOrder())
                         .build())
-                .sorted(Comparator.comparingInt(CrmPipelineStage::displayOrder))
+                .sorted(Comparator.comparingInt(CrmRemoteContainerStage::displayOrder))
                 .toList();
-        return CrmPipeline.builder()
-                .id(Objects.requireNonNull(pipeline.id()))
-                .label(pipeline.label() == null ? pipeline.id() : pipeline.label())
+        return CrmRemoteContainer.builder()
+                .remoteId(Objects.requireNonNull(pipeline.id()))
+                .name(pipeline.label() == null ? pipeline.id() : pipeline.label())
                 .displayOrder(pipeline.displayOrder() == null ? 0 : pipeline.displayOrder())
                 .stages(stages)
                 .build();
     }
 
-    static @NonNull CrmDealProperty property(@NonNull HubSpotProperty property) {
-        var options = property.options() == null ? List.<CrmDealPropertyOption>of() : property.options().stream()
+    static @NonNull CrmProperty property(@NonNull HubSpotProperty property) {
+        var options = property.options() == null ? List.<CrmPropertyOption>of() : property.options().stream()
                 .filter(option -> option.value() != null)
-                .map(option -> CrmDealPropertyOption.builder()
+                .map(option -> CrmPropertyOption.builder()
                         .value(option.value())
                         .label(option.label() == null ? option.value() : option.label())
                         .displayOrder(option.displayOrder() == null ? 0 : option.displayOrder())
                         .hidden(Boolean.TRUE.equals(option.hidden()))
                         .build())
-                .sorted(Comparator.comparingInt(CrmDealPropertyOption::displayOrder))
+                .sorted(Comparator.comparingInt(CrmPropertyOption::displayOrder))
                 .toList();
         var name = Objects.requireNonNull(property.name());
-        return CrmDealProperty.builder()
+        return CrmProperty.builder()
                 .name(name)
                 .label(property.label() == null ? name : property.label())
                 .type(property.type() == null ? "string" : property.type())
@@ -168,7 +175,6 @@ final class HubSpotMapper {
         put(properties, "email", contact.email());
         put(properties, "phone", contact.phone());
         put(properties, "jobtitle", contact.jobTitle());
-        put(properties, OWNER, contact.ownerId());
         return properties;
     }
 
@@ -180,21 +186,33 @@ final class HubSpotMapper {
         put(properties, "phone", company.phone());
         put(properties, "city", company.city());
         put(properties, "country", company.country());
-        put(properties, OWNER, company.ownerId());
         return properties;
     }
 
-    static @NonNull Map<String, String> deal(@NonNull SaveCrmDealBuilder deal, @Nullable CrmStageWrite stage) {
+    /** @param containerRemoteId the pipeline to create the deal in; {@code null} on an update, which never moves it. */
+    static @NonNull Map<String, String> deal(@NonNull SaveCrmDealBuilder deal,
+                                             @Nullable String containerRemoteId,
+                                             @Nullable CrmStageWrite stage) {
         var properties = new LinkedHashMap<String, String>();
         put(properties, "dealname", deal.name());
         put(properties, "amount", deal.amount() == null ? null : deal.amount().toPlainString());
         put(properties, "deal_currency_code", deal.currency());
         put(properties, "closedate", deal.closeDate() == null ? null : deal.closeDate().toString());
-        put(properties, DEAL_PIPELINE, deal.pipelineId());
-        put(properties, OWNER, deal.ownerId());
+        put(properties, HubSpotContainerKind.DEALS.pipelineProperty(), containerRemoteId);
         if (stage != null) {
             properties.put(stage.propertyName(), stage.value());
         }
+        return properties;
+    }
+
+    static @NonNull Map<String, String> lead(@NonNull CreateCrmLeadBuilder lead,
+                                             @NonNull String containerRemoteId,
+                                             @NonNull CrmStageWrite stage) {
+        var properties = new LinkedHashMap<String, String>();
+        properties.put("hs_lead_name", lead.name());
+        put(properties, "hs_lead_type", lead.type());
+        properties.put(HubSpotContainerKind.LEADS.pipelineProperty(), containerRemoteId);
+        properties.put(stage.propertyName(), stage.value());
         return properties;
     }
 
@@ -217,7 +235,6 @@ final class HubSpotMapper {
         if (names.status() != null) {
             put(properties, names.status(), activity.status());
         }
-        put(properties, OWNER, activity.ownerId());
         return properties;
     }
 
@@ -291,7 +308,6 @@ final class HubSpotMapper {
             if (this.status != null) {
                 names.add(this.status);
             }
-            names.add(OWNER);
             return names;
         }
     }

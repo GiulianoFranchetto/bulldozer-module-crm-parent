@@ -8,6 +8,5 @@ public record UpdateCrmContactRequest(@Nullable @Size(max = CrmConstraints.SHORT
                                       @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String lastName,
                                       @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String email,
                                       @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String phone,
-                                      @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String jobTitle,
-                                      @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String ownerId) {
+                                      @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String jobTitle) {
 }

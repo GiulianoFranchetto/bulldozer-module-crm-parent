@@ -46,7 +46,6 @@ public class UpdateCrmCompanyController {
                         .phone(request.phone())
                         .city(request.city())
                         .country(request.country())
-                        .ownerId(request.ownerId())
                         .build());
         return new UpdateCrmCompanyResponse(company);
     }

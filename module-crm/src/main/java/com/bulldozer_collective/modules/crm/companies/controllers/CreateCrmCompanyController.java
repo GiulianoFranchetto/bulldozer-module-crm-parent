@@ -47,7 +47,6 @@ public class CreateCrmCompanyController {
                         .phone(request.phone())
                         .city(request.city())
                         .country(request.country())
-                        .ownerId(request.ownerId())
                         .build());
         return new CreateCrmCompanyResponse(company);
     }

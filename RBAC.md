@@ -14,7 +14,7 @@ Access rules of every **authenticated, non-internal** endpoint. The module expos
 | ✓ | Allowed |
 | *(empty)* | Denied |
 
-Every rule below comes from `security/DefaultAccessChecker.java` and the 28 per-endpoint checkers, each of
+Every rule below comes from `security/DefaultAccessChecker.java` and the 34 per-endpoint checkers, each of
 which extends it and adds nothing.
 
 **`BULLDOZER_OPS` is accepted since Bug 67** (2026-08-12). Before that, this module and `tracking` were the
@@ -29,14 +29,17 @@ project. `tracking` was aligned first; this module closes the gap.
 | `POST /crm/connections` | ✓ | ✓ | ✓ | ✓ | Checks the modulith holds a token |
 | `GET /crm/connections` | ✓ | ✓ | ✓ | ✓ |  |
 | `GET /crm/connections/{connectionId}` | ✓ | ✓ | ✓ | ✓ |  |
-| `DELETE /crm/connections/{connectionId}` | ✓ | ✓ | ✓ | ✓ | Deletes the stage configuration too |
-| `GET /crm/{connectionId}/pipelines` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
-| `GET /crm/{connectionId}/deal-properties` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
-| `GET /crm/{connectionId}/pipelines/{pipelineId}/stage-source` | ✓ | ✓ | ✓ | ✓ |  |
-| `PUT /crm/{connectionId}/pipelines/{pipelineId}/stage-source` | ✓ | ✓ | ✓ | ✓ | Calls the CRM; drops the pipeline's mappings when the property changes |
-| `GET /crm/{connectionId}/pipelines/{pipelineId}/stage-mappings` | ✓ | ✓ | ✓ | ✓ |  |
-| `POST /crm/{connectionId}/pipelines/{pipelineId}/stage-mappings` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
-| `DELETE /crm/{connectionId}/pipelines/{pipelineId}/stage-mappings/{mappingId}` | ✓ | ✓ | ✓ | ✓ |  |
+| `DELETE /crm/connections/{connectionId}` | ✓ | ✓ | ✓ | ✓ | Deletes its containers and stages too |
+| `GET /crm/{connectionId}/remote-containers` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `GET /crm/{connectionId}/properties` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `POST /crm/{connectionId}/containers` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `GET /crm/{connectionId}/containers` | ✓ | ✓ | ✓ | ✓ |  |
+| `GET /crm/{connectionId}/containers/{containerId}` | ✓ | ✓ | ✓ | ✓ |  |
+| `DELETE /crm/{connectionId}/containers/{containerId}` | ✓ | ✓ | ✓ | ✓ | Deletes its stages too |
+| `PUT /crm/{connectionId}/containers/{containerId}/stage-source` | ✓ | ✓ | ✓ | ✓ | Calls the CRM; replaces every stage and mapping |
+| `POST /crm/{connectionId}/containers/{containerId}/refresh` | ✓ | ✓ | ✓ | ✓ | Calls the CRM; drops the mappings of vanished stages |
+| `GET /crm/{connectionId}/stages` | ✓ | ✓ | ✓ | ✓ |  |
+| `PUT /crm/{connectionId}/stages/{stageId}/mapping` | ✓ | ✓ | ✓ | ✓ |  |
 | `GET /crm/{connectionId}/contacts` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `GET /crm/{connectionId}/contacts/{id}` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `POST /crm/{connectionId}/contacts` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
@@ -49,6 +52,9 @@ project. `tracking` was aligned first; this module closes the gap.
 | `GET /crm/{connectionId}/deals/{id}` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `POST /crm/{connectionId}/deals` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
 | `PATCH /crm/{connectionId}/deals/{id}` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
+| `GET /crm/{connectionId}/leads` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `GET /crm/{connectionId}/leads/{id}` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `POST /crm/{connectionId}/leads` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
 | `GET /crm/{connectionId}/activities` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `GET /crm/{connectionId}/activities/{id}` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `POST /crm/{connectionId}/activities` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
@@ -58,8 +64,8 @@ project. `tracking` was aligned first; this module closes the gap.
 **No endpoint carries `@FeatureNeeded`** — the module has no subscription gate. This is a deliberate, current
 decision: the CRM bridge is not on sale separately yet. Revisit when it is.
 
-**Uniform on purpose.** Writes and configuration actions (registering a CRM connection, editing the stage
-configuration, creating or updating records in the customer's CRM) are open to any project member, exactly
+**Uniform on purpose.** Writes and configuration actions (registering a CRM connection, importing containers and
+mapping their stages, creating or updating records in the customer's CRM) are open to any project member, exactly
 like the reads — confirmed again for the bridge (V2, 2026-10-09). This was
 chosen explicitly rather than inherited: the alternative — restricting writes to the project `MANAGER` — is
 the obvious tightening if the module is ever exposed to end customers.

@@ -11,11 +11,10 @@ public record SaveCrmContactBuilder(@Nullable String firstName,
                                     @Nullable String lastName,
                                     @Nullable String email,
                                     @Nullable String phone,
-                                    @Nullable String jobTitle,
-                                    @Nullable String ownerId) {
+                                    @Nullable String jobTitle) {
 
     public boolean isEmpty() {
-        return Stream.of(this.firstName, this.lastName, this.email, this.phone, this.jobTitle, this.ownerId)
+        return Stream.of(this.firstName, this.lastName, this.email, this.phone, this.jobTitle)
                 .allMatch(value -> value == null);
     }
 }

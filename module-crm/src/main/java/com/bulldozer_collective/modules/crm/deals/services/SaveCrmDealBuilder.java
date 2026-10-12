@@ -10,20 +10,17 @@ import java.util.stream.Stream;
 
 /**
  * The fields of a deal to write to the CRM. A {@code null} field is not written. {@code stage} is not written as
- * such: the services translate it into the CRM value its mapping designates.
+ * such: the services translate it into the value its container's mapping designates.
  */
 @Builder
 public record SaveCrmDealBuilder(@Nullable String name,
-                                 @Nullable String pipelineId,
                                  @Nullable CrmDealStage stage,
                                  @Nullable BigDecimal amount,
                                  @Nullable String currency,
-                                 @Nullable Instant closeDate,
-                                 @Nullable String ownerId) {
+                                 @Nullable Instant closeDate) {
 
     public boolean isEmpty() {
-        return Stream.of(this.name, this.pipelineId, this.stage, this.amount, this.currency, this.closeDate,
-                        this.ownerId)
+        return Stream.of(this.name, this.stage, this.amount, this.currency, this.closeDate)
                 .allMatch(value -> value == null);
     }
 }

@@ -1,9 +1,10 @@
 package com.bulldozer_collective.modules.crm.api;
 
-import java.time.Instant;
 import lombok.Builder;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+
+import java.time.Instant;
 
 /**
  * An activity (call, email, meeting, note or task) as read from the CRM. {@code timestamp} is when it happened —
@@ -16,7 +17,6 @@ public record CrmActivity(@NonNull String id,
                           @Nullable String body,
                           @Nullable String status,
                           @Nullable Instant timestamp,
-                          @Nullable String ownerId,
                           @Nullable Instant createdAt,
                           @Nullable Instant updatedAt) {
 }

@@ -47,7 +47,6 @@ public class CreateCrmActivityController {
                         .title(request.title())
                         .body(request.body())
                         .status(request.status())
-                        .ownerId(request.ownerId())
                         .associations(request.associations() == null ? List.of() : request.associations())
                         .build());
         return new CreateCrmActivityResponse(activity);

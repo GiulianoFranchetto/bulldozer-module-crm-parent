@@ -3,10 +3,11 @@ package com.bulldozer_collective.modules.crm.api;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.time.Instant;
-import java.util.List;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+
+import java.time.Instant;
+import java.util.List;
 
 /**
  * {@code timestamp} is when the activity happened — for a task, its due date. {@code status} is the CRM's raw
@@ -18,6 +19,5 @@ public record CreateCrmActivityRequest(@NonNull @NotNull CrmActivityType type,
                                        @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String title,
                                        @Nullable @Size(max = CrmConstraints.LONG_TEXT) String body,
                                        @Nullable @Size(max = 32) String status,
-                                       @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String ownerId,
                                        @Nullable @Size(max = 50) List<@Valid CrmObjectRef> associations) {
 }

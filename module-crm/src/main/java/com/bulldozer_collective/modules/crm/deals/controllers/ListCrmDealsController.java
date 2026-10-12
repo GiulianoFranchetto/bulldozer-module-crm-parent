@@ -37,6 +37,7 @@ public class ListCrmDealsController {
                 Objects.requireNonNull(context.targetCustomerId()),
                 Objects.requireNonNull(context.projectId()),
                 connectionId,
+                param.containerId(),
                 ListCrmObjectsBuilder.builder()
                         .q(param.q())
                         .associatedTo(ListCrmObjectsBuilder.association(param.associatedType(), param.associatedId()))

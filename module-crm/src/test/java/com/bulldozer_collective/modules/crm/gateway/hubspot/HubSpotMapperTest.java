@@ -2,9 +2,11 @@ package com.bulldozer_collective.modules.crm.gateway.hubspot;
 
 import com.bulldozer_collective.modules.crm.activities.services.CreateCrmActivityBuilder;
 import com.bulldozer_collective.modules.crm.api.CrmActivityType;
+import com.bulldozer_collective.modules.crm.api.CrmLeadStage;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageWrite;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotObject;
+import com.bulldozer_collective.modules.crm.leads.services.CreateCrmLeadBuilder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,8 +22,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class HubSpotMapperTest {
 
     @Test
-    @DisplayName("a deal keeps every property it was read with, null values included, for the stage resolution")
-    void dealKeepsRawProperties() {
+    @DisplayName("a deal carries its pipeline and every property read with it, null values included")
+    void dealKeepsPipelineAndRawProperties() {
         var properties = new HashMap<String, String>();
         properties.put("dealname", "Acme");
         properties.put("amount", "1200.50");
@@ -31,10 +34,11 @@ class HubSpotMapperTest {
 
         var record = HubSpotMapper.deal(new HubSpotObject("7", properties, null, null));
 
-        assertThat(record.deal().amount()).isEqualByComparingTo(new BigDecimal("1200.50"));
-        assertThat(record.deal().closeDate()).isEqualTo(Instant.parse("2026-11-30T00:00:00Z"));
-        assertThat(record.deal().pipelineId()).isEqualTo("default");
-        assertThat(record.deal().stage()).isNull();
+        assertThat(record.containerRemoteId()).isEqualTo("default");
+        assertThat(record.item().amount()).isEqualByComparingTo(new BigDecimal("1200.50"));
+        assertThat(record.item().closeDate()).isEqualTo(Instant.parse("2026-11-30T00:00:00Z"));
+        assertThat(record.item().stage()).isNull();
+        assertThat(record.item().containerId()).isNull();
         assertThat(record.properties()).containsEntry("bdz_stage", "signed");
     }
 
@@ -45,7 +49,7 @@ class HubSpotMapperTest {
         properties.put("amount", "n/a");
         properties.put("closedate", "1764460800000");
 
-        var deal = HubSpotMapper.deal(new HubSpotObject("7", properties, null, null)).deal();
+        var deal = HubSpotMapper.deal(new HubSpotObject("7", properties, null, null)).item();
 
         assertThat(deal.amount()).isNull();
         assertThat(deal.closeDate()).isEqualTo(Instant.ofEpochMilli(1764460800000L));
@@ -53,14 +57,31 @@ class HubSpotMapperTest {
     }
 
     @Test
-    @DisplayName("a deal write carries only the given fields, plus the stage property and value")
+    @DisplayName("a deal is created in its container's pipeline; an update never touches the pipeline")
     void dealWrite() {
         var deal = SaveCrmDealBuilder.builder().name("Acme").amount(new BigDecimal("10")).build();
+        var stage = new CrmStageWrite("bdz_stage", "signed");
 
-        var properties = HubSpotMapper.deal(deal, new CrmStageWrite("bdz_stage", "signed"));
+        assertThat(HubSpotMapper.deal(deal, "default", stage))
+                .containsOnlyKeys("dealname", "amount", "pipeline", "bdz_stage")
+                .containsEntry("pipeline", "default");
+        assertThat(HubSpotMapper.deal(deal, null, null)).containsOnlyKeys("dealname", "amount");
+    }
 
-        assertThat(properties).containsOnlyKeys("dealname", "amount", "bdz_stage");
-        assertThat(properties).containsEntry("bdz_stage", "signed");
+    @Test
+    @DisplayName("a lead carries its pipeline and its name, type and stage source")
+    void leadReadAndWrite() {
+        var record = HubSpotMapper.lead(new HubSpotObject("9",
+                Map.of("hs_lead_name", "Jane", "hs_lead_type", "NEW_BUSINESS", "hs_pipeline", "lead-pipeline"),
+                null, null));
+        assertThat(record.containerRemoteId()).isEqualTo("lead-pipeline");
+        assertThat(record.item().name()).isEqualTo("Jane");
+        assertThat(record.item().type()).isEqualTo("NEW_BUSINESS");
+
+        var lead = CreateCrmLeadBuilder.builder()
+                .name("Jane").contactId("42").stage(CrmLeadStage.CRM_LEAD_STAGE_NEW).build();
+        assertThat(HubSpotMapper.lead(lead, "lead-pipeline", new CrmStageWrite("hs_pipeline_stage", "new")))
+                .containsOnlyKeys("hs_lead_name", "hs_pipeline", "hs_pipeline_stage");
     }
 
     @Test

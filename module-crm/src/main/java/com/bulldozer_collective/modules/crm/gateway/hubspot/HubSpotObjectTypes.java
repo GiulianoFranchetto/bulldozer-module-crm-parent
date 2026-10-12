@@ -19,6 +19,7 @@ final class HubSpotObjectTypes {
             case CRM_OBJECT_TYPE_CONTACT -> "contacts";
             case CRM_OBJECT_TYPE_COMPANY -> "companies";
             case CRM_OBJECT_TYPE_DEAL -> "deals";
+            case CRM_OBJECT_TYPE_LEAD -> "leads";
             case CRM_OBJECT_TYPE_CALL -> "calls";
             case CRM_OBJECT_TYPE_EMAIL -> "emails";
             case CRM_OBJECT_TYPE_MEETING -> "meetings";
@@ -32,6 +33,7 @@ final class HubSpotObjectTypes {
             case CRM_OBJECT_TYPE_CONTACT -> "contact";
             case CRM_OBJECT_TYPE_COMPANY -> "company";
             case CRM_OBJECT_TYPE_DEAL -> "deal";
+            case CRM_OBJECT_TYPE_LEAD -> "lead";
             case CRM_OBJECT_TYPE_CALL -> "call";
             case CRM_OBJECT_TYPE_EMAIL -> "email";
             case CRM_OBJECT_TYPE_MEETING -> "meeting";

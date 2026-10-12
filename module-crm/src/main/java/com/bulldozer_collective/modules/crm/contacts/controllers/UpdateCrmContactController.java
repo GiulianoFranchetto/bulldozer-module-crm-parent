@@ -45,7 +45,6 @@ public class UpdateCrmContactController {
                         .email(request.email())
                         .phone(request.phone())
                         .jobTitle(request.jobTitle())
-                        .ownerId(request.ownerId())
                         .build());
         return new UpdateCrmContactResponse(contact);
     }

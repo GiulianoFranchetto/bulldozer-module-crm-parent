@@ -12,11 +12,10 @@ public record SaveCrmCompanyBuilder(@Nullable String name,
                                     @Nullable String industry,
                                     @Nullable String phone,
                                     @Nullable String city,
-                                    @Nullable String country,
-                                    @Nullable String ownerId) {
+                                    @Nullable String country) {
 
     public boolean isEmpty() {
-        return Stream.of(this.name, this.domain, this.industry, this.phone, this.city, this.country, this.ownerId)
+        return Stream.of(this.name, this.domain, this.industry, this.phone, this.city, this.country)
                 .allMatch(value -> value == null);
     }
 }

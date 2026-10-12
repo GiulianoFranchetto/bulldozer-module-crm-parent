@@ -1,5 +1,6 @@
 package com.bulldozer_collective.modules.crm.deals.controllers;
 
+import com.bulldozer_collective.modules.crm.api.CrmContainerParam;
 import com.bulldozer_collective.modules.crm.api.UpdateCrmDealRequest;
 import com.bulldozer_collective.modules.crm.api.UpdateCrmDealResponse;
 import com.bulldozer_collective.modules.crm.deals.security.UpdateCrmDealAccessChecker;
@@ -32,21 +33,21 @@ public class UpdateCrmDealController {
     public UpdateCrmDealResponse update(@JwtRequestContext RequestContext context,
                                         @PathVariable @NonNull UUID connectionId,
                                         @Valid @RequestBody @NonNull UpdateCrmDealRequest request,
-                                        @PathVariable @NonNull String id) throws NoTokenException {
+                                        @PathVariable @NonNull String id,
+                                        @Valid @NonNull CrmContainerParam param) throws NoTokenException {
         this.accessChecker.checkAccess(context);
         var deal = this.updater.update(
                 Objects.requireNonNull(context.targetCustomerId()),
                 Objects.requireNonNull(context.projectId()),
                 connectionId,
+                param.containerId(),
                 id,
                 SaveCrmDealBuilder.builder()
                         .name(request.name())
-                        .pipelineId(request.pipelineId())
                         .stage(request.stage())
                         .amount(request.amount())
                         .currency(request.currency())
                         .closeDate(request.closeDate())
-                        .ownerId(request.ownerId())
                         .build());
         return new UpdateCrmDealResponse(deal);
     }

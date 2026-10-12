@@ -5,24 +5,28 @@ import com.bulldozer_collective.modules.crm.api.CrmActivity;
 import com.bulldozer_collective.modules.crm.api.CrmActivityType;
 import com.bulldozer_collective.modules.crm.api.CrmCompany;
 import com.bulldozer_collective.modules.crm.api.CrmContact;
-import com.bulldozer_collective.modules.crm.api.CrmDealProperty;
+import com.bulldozer_collective.modules.crm.api.CrmContainerType;
+import com.bulldozer_collective.modules.crm.api.CrmDeal;
+import com.bulldozer_collective.modules.crm.api.CrmLead;
 import com.bulldozer_collective.modules.crm.api.CrmObjectRef;
 import com.bulldozer_collective.modules.crm.api.CrmObjectType;
 import com.bulldozer_collective.modules.crm.api.CrmPage;
-import com.bulldozer_collective.modules.crm.api.CrmPipeline;
-import com.bulldozer_collective.modules.crm.api.CrmPipelineStage;
+import com.bulldozer_collective.modules.crm.api.CrmProperty;
+import com.bulldozer_collective.modules.crm.api.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBuilder;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
-import com.bulldozer_collective.modules.crm.gateway.CrmDealRecord;
+import com.bulldozer_collective.modules.crm.gateway.CrmContainedRecord;
 import com.bulldozer_collective.modules.crm.gateway.CrmGateway;
 import com.bulldozer_collective.modules.crm.gateway.CrmSession;
+import com.bulldozer_collective.modules.crm.gateway.CrmStageOption;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageWrite;
 import com.bulldozer_collective.modules.crm.gateway.ListCrmObjectsBuilder;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotObject;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotPipeline;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotProperty;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotResults;
+import com.bulldozer_collective.modules.crm.leads.services.CreateCrmLeadBuilder;
 import com.bulldozer_collective.shared.IntegrationPlatform;
 import com.bulldozer_collective.shared.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -33,13 +37,11 @@ import org.springframework.stereotype.Component;
 import tools.jackson.core.type.TypeReference;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 
 import static com.bulldozer_collective.modules.crm.gateway.hubspot.HubSpotClient.API_VERSION;
@@ -47,10 +49,11 @@ import static com.bulldozer_collective.modules.crm.gateway.hubspot.HubSpotClient
 /**
  * HubSpot implementation of {@link CrmGateway}, on the {@value HubSpotClient#API_VERSION} CRM API.
  *
- * <p>A plain listing goes through {@code GET /crm/objects/{version}/{type}}; a full-text query or an association
- * filter goes through {@code POST …/{type}/search}, which HubSpot indexes with a few seconds' delay and limits to
- * five requests per second and 10,000 results per query. Associations are created with HubSpot's default
- * (unlabelled) association type, which needs no association type id.
+ * <p>A container is a HubSpot pipeline. A plain listing goes through {@code GET /crm/objects/{version}/{type}};
+ * a listing restricted to a pipeline, a full-text query or an association filter goes through
+ * {@code POST …/{type}/search}, which HubSpot indexes with a few seconds' delay and limits to five requests per
+ * second and 10,000 results per query. Associations are created with HubSpot's default (unlabelled) association
+ * type, which needs no association type id.
  */
 @Component
 @RequiredArgsConstructor
@@ -61,8 +64,11 @@ public class HubSpotCrmGateway implements CrmGateway {
     private static final TypeReference<HubSpotResults<HubSpotPipeline>> PIPELINES = new TypeReference<>() {};
     private static final TypeReference<HubSpotResults<HubSpotProperty>> PROPERTIES = new TypeReference<>() {};
 
-    /** HubSpot's object type id for deals, as the pipelines endpoint is documented with it. */
-    private static final String DEALS_TYPE_ID = "0-3";
+    /**
+     * The lead → contact association a lead must be created with, as given by the leads guide's create example
+     * ({@code HUBSPOT_DEFINED}, type {@code 578}).
+     */
+    private static final int LEAD_TO_CONTACT_ASSOCIATION_TYPE = 578;
 
     private final HubSpotClientFactory clientFactory;
 
@@ -76,7 +82,7 @@ public class HubSpotCrmGateway implements CrmGateway {
     @Override
     public @NonNull CrmPage<CrmContact> listContacts(@NonNull CrmSession session,
                                                      @NonNull ListCrmObjectsBuilder query) {
-        return this.list(session, CrmObjectType.CRM_OBJECT_TYPE_CONTACT, query, HubSpotMapper.CONTACT_PROPERTIES,
+        return this.list(session, CrmObjectType.CRM_OBJECT_TYPE_CONTACT, query, null, HubSpotMapper.CONTACT_PROPERTIES,
                 HubSpotMapper::contact);
     }
 
@@ -88,7 +94,7 @@ public class HubSpotCrmGateway implements CrmGateway {
 
     @Override
     public @NonNull String createContact(@NonNull CrmSession session, @NonNull SaveCrmContactBuilder contact) {
-        return this.create(session, CrmObjectType.CRM_OBJECT_TYPE_CONTACT, HubSpotMapper.contact(contact));
+        return this.create(session, CrmObjectType.CRM_OBJECT_TYPE_CONTACT, HubSpotMapper.contact(contact), List.of());
     }
 
     @Override
@@ -103,7 +109,7 @@ public class HubSpotCrmGateway implements CrmGateway {
     @Override
     public @NonNull CrmPage<CrmCompany> listCompanies(@NonNull CrmSession session,
                                                       @NonNull ListCrmObjectsBuilder query) {
-        return this.list(session, CrmObjectType.CRM_OBJECT_TYPE_COMPANY, query, HubSpotMapper.COMPANY_PROPERTIES,
+        return this.list(session, CrmObjectType.CRM_OBJECT_TYPE_COMPANY, query, null, HubSpotMapper.COMPANY_PROPERTIES,
                 HubSpotMapper::company);
     }
 
@@ -115,7 +121,7 @@ public class HubSpotCrmGateway implements CrmGateway {
 
     @Override
     public @NonNull String createCompany(@NonNull CrmSession session, @NonNull SaveCrmCompanyBuilder company) {
-        return this.create(session, CrmObjectType.CRM_OBJECT_TYPE_COMPANY, HubSpotMapper.company(company));
+        return this.create(session, CrmObjectType.CRM_OBJECT_TYPE_COMPANY, HubSpotMapper.company(company), List.of());
     }
 
     @Override
@@ -125,29 +131,92 @@ public class HubSpotCrmGateway implements CrmGateway {
         this.update(session, CrmObjectType.CRM_OBJECT_TYPE_COMPANY, id, HubSpotMapper.company(company));
     }
 
-    // ── deals ────────────────────────────────────────────────────────────────
+    // ── containers ───────────────────────────────────────────────────────────
 
     @Override
-    public @NonNull CrmPage<CrmDealRecord> listDeals(@NonNull CrmSession session,
-                                                     @NonNull ListCrmObjectsBuilder query,
-                                                     @NonNull Collection<String> stageProperties) {
-        return this.list(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL, query, dealProperties(stageProperties),
-                HubSpotMapper::deal);
+    public @NonNull List<CrmRemoteContainer> listRemoteContainers(@NonNull CrmSession session,
+                                                                  @NonNull CrmContainerType type) {
+        var kind = HubSpotContainerKind.of(type);
+        var response = this.clientFactory.create(session.accessToken())
+                .get(List.of("crm", "pipelines", API_VERSION, kind.pipelineTypeId()), Map.of(), PIPELINES);
+        return results(response).stream()
+                .filter(pipeline -> pipeline.id() != null && !Boolean.TRUE.equals(pipeline.archived()))
+                .map(HubSpotMapper::pipeline)
+                .sorted(Comparator.comparingInt(CrmRemoteContainer::displayOrder))
+                .toList();
     }
 
     @Override
-    public @NonNull CrmDealRecord getDeal(@NonNull CrmSession session,
-                                          @NonNull String id,
-                                          @NonNull Collection<String> stageProperties) {
-        return HubSpotMapper.deal(
-                this.get(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL, id, dealProperties(stageProperties)));
+    public @NonNull List<CrmProperty> listProperties(@NonNull CrmSession session, @NonNull CrmContainerType type) {
+        var kind = HubSpotContainerKind.of(type);
+        var response = this.clientFactory.create(session.accessToken())
+                .get(List.of("crm", "properties", API_VERSION, kind.propertiesPath()), Map.of(), PROPERTIES);
+        return results(response).stream()
+                .filter(property -> property.name() != null
+                        && !Boolean.TRUE.equals(property.archived())
+                        && !Boolean.TRUE.equals(property.hidden()))
+                .map(HubSpotMapper::property)
+                .sorted(Comparator.comparing(CrmProperty::label, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    /**
+     * The native stage property takes the stage ids of the record's own pipeline — its property definition lists
+     * the stages of every pipeline, so it cannot be used. Any other property takes the values of its options.
+     */
+    @Override
+    public @NonNull List<CrmStageOption> listStageOptions(@NonNull CrmSession session,
+                                                          @NonNull CrmContainerType type,
+                                                          @NonNull String containerRemoteId,
+                                                          @NonNull String propertyName) {
+        var kind = HubSpotContainerKind.of(type);
+        if (kind.nativeStageProperty().equals(propertyName)) {
+            return this.listRemoteContainers(session, type).stream()
+                    .filter(pipeline -> pipeline.remoteId().equals(containerRemoteId))
+                    .findFirst()
+                    .map(pipeline -> pipeline.stages().stream()
+                            .map(stage -> new CrmStageOption(stage.remoteId(), stage.name(), stage.displayOrder()))
+                            .toList())
+                    .orElseThrow(() -> new NotFoundException("HubSpot: no pipeline " + containerRemoteId));
+        }
+        return this.listProperties(session, type).stream()
+                .filter(property -> property.name().equals(propertyName))
+                .findFirst()
+                .map(property -> property.options().stream()
+                        .filter(option -> !option.hidden())
+                        .map(option -> new CrmStageOption(option.value(), option.label(), option.displayOrder()))
+                        .toList())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "propertyName: '%s' is not a property of this HubSpot account".formatted(propertyName)));
+    }
+
+    // ── deals ────────────────────────────────────────────────────────────────
+
+    @Override
+    public @NonNull CrmPage<CrmContainedRecord<CrmDeal>> listDeals(@NonNull CrmSession session,
+                                                                   @NonNull String containerRemoteId,
+                                                                   @NonNull ListCrmObjectsBuilder query,
+                                                                   @NonNull String stageProperty) {
+        return this.list(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL, query,
+                Map.of(HubSpotContainerKind.DEALS.pipelineProperty(), containerRemoteId),
+                with(HubSpotMapper.DEAL_PROPERTIES, stageProperty), HubSpotMapper::deal);
+    }
+
+    @Override
+    public @NonNull CrmContainedRecord<CrmDeal> getDeal(@NonNull CrmSession session,
+                                                        @NonNull String id,
+                                                        @NonNull String stageProperty) {
+        return HubSpotMapper.deal(this.get(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL, id,
+                with(HubSpotMapper.DEAL_PROPERTIES, stageProperty)));
     }
 
     @Override
     public @NonNull String createDeal(@NonNull CrmSession session,
+                                      @NonNull String containerRemoteId,
                                       @NonNull SaveCrmDealBuilder deal,
                                       @NonNull CrmStageWrite stage) {
-        return this.create(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL, HubSpotMapper.deal(deal, stage));
+        return this.create(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL,
+                HubSpotMapper.deal(deal, containerRemoteId, stage), List.of());
     }
 
     @Override
@@ -155,54 +224,42 @@ public class HubSpotCrmGateway implements CrmGateway {
                            @NonNull String id,
                            @NonNull SaveCrmDealBuilder deal,
                            @Nullable CrmStageWrite stage) {
-        this.update(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL, id, HubSpotMapper.deal(deal, stage));
+        this.update(session, CrmObjectType.CRM_OBJECT_TYPE_DEAL, id, HubSpotMapper.deal(deal, null, stage));
+    }
+
+    // ── leads ────────────────────────────────────────────────────────────────
+
+    @Override
+    public @NonNull CrmPage<CrmContainedRecord<CrmLead>> listLeads(@NonNull CrmSession session,
+                                                                   @NonNull String containerRemoteId,
+                                                                   @NonNull ListCrmObjectsBuilder query,
+                                                                   @NonNull String stageProperty) {
+        return this.list(session, CrmObjectType.CRM_OBJECT_TYPE_LEAD, query,
+                Map.of(HubSpotContainerKind.LEADS.pipelineProperty(), containerRemoteId),
+                with(HubSpotMapper.LEAD_PROPERTIES, stageProperty), HubSpotMapper::lead);
     }
 
     @Override
-    public @NonNull List<CrmPipeline> listPipelines(@NonNull CrmSession session) {
-        var response = this.clientFactory.create(session.accessToken())
-                .get(List.of("crm", "pipelines", API_VERSION, DEALS_TYPE_ID), Map.of(), PIPELINES);
-        return results(response).stream()
-                .filter(pipeline -> pipeline.id() != null && !Boolean.TRUE.equals(pipeline.archived()))
-                .map(HubSpotMapper::pipeline)
-                .sorted(Comparator.comparingInt(CrmPipeline::displayOrder))
-                .toList();
+    public @NonNull CrmContainedRecord<CrmLead> getLead(@NonNull CrmSession session,
+                                                        @NonNull String id,
+                                                        @NonNull String stageProperty) {
+        return HubSpotMapper.lead(this.get(session, CrmObjectType.CRM_OBJECT_TYPE_LEAD, id,
+                with(HubSpotMapper.LEAD_PROPERTIES, stageProperty)));
     }
 
+    /** HubSpot refuses a lead that is not associated with an existing contact at creation. */
     @Override
-    public @NonNull List<CrmDealProperty> listDealProperties(@NonNull CrmSession session) {
-        var response = this.clientFactory.create(session.accessToken())
-                .get(List.of("crm", "properties", API_VERSION, "deals"), Map.of(), PROPERTIES);
-        return results(response).stream()
-                .filter(property -> property.name() != null
-                        && !Boolean.TRUE.equals(property.archived())
-                        && !Boolean.TRUE.equals(property.hidden()))
-                .map(HubSpotMapper::property)
-                .sorted(Comparator.comparing(CrmDealProperty::label, String.CASE_INSENSITIVE_ORDER))
-                .toList();
-    }
-
-    /**
-     * The native {@code dealstage} takes the stage ids of the deal's own pipeline — its property definition lists
-     * the stages of every pipeline, so it cannot be used. Any other property takes the values of its options.
-     */
-    @Override
-    public @NonNull List<String> listStageValues(@NonNull CrmSession session,
-                                                 @NonNull String pipelineId,
-                                                 @NonNull String propertyName) {
-        if (HubSpotMapper.DEAL_STAGE.equals(propertyName)) {
-            return this.listPipelines(session).stream()
-                    .filter(pipeline -> pipeline.id().equals(pipelineId))
-                    .findFirst()
-                    .map(pipeline -> pipeline.stages().stream().map(CrmPipelineStage::id).toList())
-                    .orElseThrow(() -> new NotFoundException("HubSpot: no deal pipeline " + pipelineId));
-        }
-        return this.listDealProperties(session).stream()
-                .filter(property -> property.name().equals(propertyName))
-                .findFirst()
-                .map(property -> property.options().stream().map(option -> option.value()).toList())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "propertyName: '%s' is not a deal property of this HubSpot account".formatted(propertyName)));
+    public @NonNull String createLead(@NonNull CrmSession session,
+                                      @NonNull String containerRemoteId,
+                                      @NonNull CreateCrmLeadBuilder lead,
+                                      @NonNull CrmStageWrite stage) {
+        var contact = Map.of(
+                "to", Map.of("id", lead.contactId()),
+                "types", List.of(Map.of(
+                        "associationCategory", "HUBSPOT_DEFINED",
+                        "associationTypeId", LEAD_TO_CONTACT_ASSOCIATION_TYPE)));
+        return this.create(session, CrmObjectType.CRM_OBJECT_TYPE_LEAD,
+                HubSpotMapper.lead(lead, containerRemoteId, stage), List.of(contact));
     }
 
     // ── activities ───────────────────────────────────────────────────────────
@@ -211,7 +268,7 @@ public class HubSpotCrmGateway implements CrmGateway {
     public @NonNull CrmPage<CrmActivity> listActivities(@NonNull CrmSession session,
                                                         @NonNull CrmActivityType type,
                                                         @NonNull ListCrmObjectsBuilder query) {
-        return this.list(session, HubSpotObjectTypes.of(type), query,
+        return this.list(session, HubSpotObjectTypes.of(type), query, null,
                 HubSpotMapper.ActivityProperties.of(type).all(), object -> HubSpotMapper.activity(type, object));
     }
 
@@ -225,7 +282,8 @@ public class HubSpotCrmGateway implements CrmGateway {
 
     @Override
     public @NonNull String createActivity(@NonNull CrmSession session, @NonNull CreateCrmActivityBuilder activity) {
-        return this.create(session, HubSpotObjectTypes.of(activity.type()), HubSpotMapper.activity(activity));
+        return this.create(session, HubSpotObjectTypes.of(activity.type()), HubSpotMapper.activity(activity),
+                List.of());
     }
 
     // ── associations ─────────────────────────────────────────────────────────
@@ -247,15 +305,18 @@ public class HubSpotCrmGateway implements CrmGateway {
 
     // ── generic object calls ─────────────────────────────────────────────────
 
+    /** @param equals property → value filters every record must match (the pipeline); forces the search. */
     private <T> CrmPage<T> list(@NonNull CrmSession session,
                                 @NonNull CrmObjectType type,
                                 @NonNull ListCrmObjectsBuilder query,
+                                @Nullable Map<String, String> equals,
                                 @NonNull List<String> properties,
                                 @NonNull Function<HubSpotObject, T> mapper) {
         var client = this.clientFactory.create(session.accessToken());
         HubSpotResults<HubSpotObject> response;
-        if (query.filtered()) {
-            response = client.send(HttpMethod.POST, objectPath(type, "search"), searchBody(query, properties), OBJECTS);
+        if (query.filtered() || equals != null) {
+            response = client.send(HttpMethod.POST, objectPath(type, "search"),
+                    searchBody(query, equals, properties), OBJECTS);
         } else {
             var params = new HashMap<String, String>();
             params.put("limit", String.valueOf(query.limit()));
@@ -287,9 +348,15 @@ public class HubSpotCrmGateway implements CrmGateway {
 
     private String create(@NonNull CrmSession session,
                           @NonNull CrmObjectType type,
-                          @NonNull Map<String, String> properties) {
+                          @NonNull Map<String, String> properties,
+                          @NonNull List<Map<String, Object>> associations) {
+        var body = new HashMap<String, Object>();
+        body.put("properties", properties);
+        if (!associations.isEmpty()) {
+            body.put("associations", associations);
+        }
         var response = this.clientFactory.create(session.accessToken())
-                .send(HttpMethod.POST, objectPath(type), Map.of("properties", properties), OBJECT);
+                .send(HttpMethod.POST, objectPath(type), body, OBJECT);
         if (response == null || response.id() == null) {
             throw new IllegalStateException("HubSpot answered a create without an id");
         }
@@ -305,6 +372,7 @@ public class HubSpotCrmGateway implements CrmGateway {
     }
 
     private static Map<String, Object> searchBody(@NonNull ListCrmObjectsBuilder query,
+                                                  @Nullable Map<String, String> equals,
                                                   @NonNull List<String> properties) {
         var body = new HashMap<String, Object>();
         body.put("limit", query.limit());
@@ -315,12 +383,21 @@ public class HubSpotCrmGateway implements CrmGateway {
         if (query.q() != null && !query.q().isBlank()) {
             body.put("query", query.q());
         }
+
+        // One filter group: every filter in it must match.
+        var filters = new ArrayList<Map<String, String>>();
+        if (equals != null) {
+            equals.forEach((property, value) ->
+                    filters.add(Map.of("propertyName", property, "operator", "EQ", "value", value)));
+        }
         if (query.associatedTo() != null) {
-            var filter = Map.of(
+            filters.add(Map.of(
                     "propertyName", "associations." + HubSpotObjectTypes.singular(query.associatedTo().type()),
                     "operator", "EQ",
-                    "value", query.associatedTo().id());
-            body.put("filterGroups", List.of(Map.of("filters", List.of(filter))));
+                    "value", query.associatedTo().id()));
+        }
+        if (!filters.isEmpty()) {
+            body.put("filterGroups", List.of(Map.of("filters", filters)));
         }
         return body;
     }
@@ -331,10 +408,10 @@ public class HubSpotCrmGateway implements CrmGateway {
         return segments;
     }
 
-    private static List<String> dealProperties(@NonNull Collection<String> stageProperties) {
-        var properties = new LinkedHashSet<>(HubSpotMapper.DEAL_PROPERTIES);
-        stageProperties.stream().filter(Objects::nonNull).forEach(properties::add);
-        return List.copyOf(properties);
+    private static List<String> with(@NonNull List<String> properties, @NonNull String stageProperty) {
+        var all = new LinkedHashSet<>(properties);
+        all.add(stageProperty);
+        return List.copyOf(all);
     }
 
     private static <T> List<T> results(@Nullable HubSpotResults<T> response) {
