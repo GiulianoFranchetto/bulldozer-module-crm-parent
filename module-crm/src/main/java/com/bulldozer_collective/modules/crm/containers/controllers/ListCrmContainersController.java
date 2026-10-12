@@ -3,8 +3,8 @@ package com.bulldozer_collective.modules.crm.containers.controllers;
 import com.bulldozer_collective.modules.crm.api.ListCrmContainersParam;
 import com.bulldozer_collective.modules.crm.api.ListCrmContainersResponse;
 import com.bulldozer_collective.modules.crm.containers.security.ListCrmContainersAccessChecker;
-import com.bulldozer_collective.modules.crm.containers.services.CrmContainerConverter;
-import com.bulldozer_collective.modules.crm.containers.services.CrmContainerFetcher;
+import com.bulldozer_collective.modules.crm.containers.services.CrmContainerSearcher;
+import com.bulldozer_collective.modules.crm.gateway.NoTokenException;
 import com.bulldozer_collective.security.annotations.JwtRequestContext;
 import com.bulldozer_collective.security.resolvers.RequestContext;
 import jakarta.validation.Valid;
@@ -23,20 +23,18 @@ import java.util.UUID;
 @RequestMapping("/crm/{connectionId}/containers")
 public class ListCrmContainersController {
 
-    private final CrmContainerFetcher fetcher;
-    private final CrmContainerConverter converter;
+    private final CrmContainerSearcher searcher;
     private final ListCrmContainersAccessChecker accessChecker;
 
     @GetMapping
     public ListCrmContainersResponse list(@JwtRequestContext RequestContext context,
                                           @PathVariable @NonNull UUID connectionId,
-                                          @Valid @NonNull ListCrmContainersParam param) {
+                                          @Valid @NonNull ListCrmContainersParam param) throws NoTokenException {
         this.accessChecker.checkAccess(context);
-        var containers = this.fetcher.fetchAll(
+        return new ListCrmContainersResponse(this.searcher.list(
                 Objects.requireNonNull(context.targetCustomerId()),
                 Objects.requireNonNull(context.projectId()),
                 connectionId,
-                param.type());
-        return new ListCrmContainersResponse(this.converter.convert(containers));
+                param.type()));
     }
 }

@@ -11,7 +11,7 @@ import com.bulldozer_collective.modules.crm.api.CrmLead;
 import com.bulldozer_collective.modules.crm.api.CrmObjectRef;
 import com.bulldozer_collective.modules.crm.api.CrmPage;
 import com.bulldozer_collective.modules.crm.api.CrmProperty;
-import com.bulldozer_collective.modules.crm.api.CrmRemoteContainer;
+import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBuilder;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
@@ -96,6 +96,11 @@ public class SalesforceCrmGateway implements CrmGateway {
     @Override
     public @NonNull List<CrmRemoteContainer> listRemoteContainers(@NonNull CrmSession session,
                                                                   @NonNull CrmContainerType type) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull String nativeStageProperty(@NonNull CrmContainerType type) {
         throw notSupported();
     }
 

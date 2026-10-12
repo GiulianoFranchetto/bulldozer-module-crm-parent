@@ -12,7 +12,7 @@ import com.bulldozer_collective.modules.crm.api.CrmObjectRef;
 import com.bulldozer_collective.modules.crm.api.CrmObjectType;
 import com.bulldozer_collective.modules.crm.api.CrmPage;
 import com.bulldozer_collective.modules.crm.api.CrmProperty;
-import com.bulldozer_collective.modules.crm.api.CrmRemoteContainer;
+import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBuilder;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
@@ -144,6 +144,11 @@ public class HubSpotCrmGateway implements CrmGateway {
                 .map(HubSpotMapper::pipeline)
                 .sorted(Comparator.comparingInt(CrmRemoteContainer::displayOrder))
                 .toList();
+    }
+
+    @Override
+    public @NonNull String nativeStageProperty(@NonNull CrmContainerType type) {
+        return HubSpotContainerKind.of(type).nativeStageProperty();
     }
 
     @Override

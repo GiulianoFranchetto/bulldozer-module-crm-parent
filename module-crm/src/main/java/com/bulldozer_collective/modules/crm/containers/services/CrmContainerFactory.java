@@ -1,6 +1,6 @@
 package com.bulldozer_collective.modules.crm.containers.services;
 
-import com.bulldozer_collective.modules.crm.api.CrmRemoteContainer;
+import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.connections.services.CrmConnectionFetcher;
 import com.bulldozer_collective.modules.crm.containers.data.CrmContainerEntity;
 import com.bulldozer_collective.modules.crm.gateway.CrmGatewayResolver;
@@ -24,7 +24,8 @@ public class CrmContainerFactory {
     private final CrmContainerPersister persister;
 
     /**
-     * Imports a CRM pipeline as a container, with the values of its stage source as stages, all unmapped.
+     * Imports a CRM container, with the values of its stage source as stages, all unmapped. Without a stage
+     * source, the CRM's native stage property is used.
      *
      * @throws NotFoundException        when the CRM has no such pipeline.
      * @throws IllegalArgumentException when the property does not exist or is not enumerated.
@@ -42,10 +43,12 @@ public class CrmContainerFactory {
                 .findFirst()
                 .map(CrmRemoteContainer::name)
                 .orElseThrow(() -> new NotFoundException("The CRM has no pipeline " + container.remoteId()));
-        var options = this.stageSources.read(session, gateway, container.type(), container.remoteId(),
-                container.stagePropertyName());
+        var stageProperty = container.stagePropertyName() != null
+                ? container.stagePropertyName()
+                : gateway.nativeStageProperty(container.type());
+        var options = this.stageSources.read(session, gateway, container.type(), container.remoteId(), stageProperty);
 
-        return this.persister.create(connection, container.type(), container.remoteId(), remote,
-                container.stagePropertyName(), options);
+        return this.persister.create(connection, container.type(), container.remoteId(), remote, stageProperty,
+                options);
     }
 }

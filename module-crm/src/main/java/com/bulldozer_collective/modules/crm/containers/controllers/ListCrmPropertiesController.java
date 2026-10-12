@@ -3,7 +3,7 @@ package com.bulldozer_collective.modules.crm.containers.controllers;
 import com.bulldozer_collective.modules.crm.api.CrmContainerTypeParam;
 import com.bulldozer_collective.modules.crm.api.ListCrmPropertiesResponse;
 import com.bulldozer_collective.modules.crm.containers.security.ListCrmPropertiesAccessChecker;
-import com.bulldozer_collective.modules.crm.containers.services.CrmRemoteContainerSearcher;
+import com.bulldozer_collective.modules.crm.containers.services.CrmContainerSearcher;
 import com.bulldozer_collective.modules.crm.gateway.NoTokenException;
 import com.bulldozer_collective.security.annotations.JwtRequestContext;
 import com.bulldozer_collective.security.resolvers.RequestContext;
@@ -23,7 +23,7 @@ import java.util.UUID;
 @RequestMapping("/crm/{connectionId}/properties")
 public class ListCrmPropertiesController {
 
-    private final CrmRemoteContainerSearcher searcher;
+    private final CrmContainerSearcher searcher;
     private final ListCrmPropertiesAccessChecker accessChecker;
 
     @GetMapping

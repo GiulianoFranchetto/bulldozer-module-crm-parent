@@ -14,7 +14,7 @@ Access rules of every **authenticated, non-internal** endpoint. The module expos
 | ✓ | Allowed |
 | *(empty)* | Denied |
 
-Every rule below comes from `security/DefaultAccessChecker.java` and the 34 per-endpoint checkers, each of
+Every rule below comes from `security/DefaultAccessChecker.java` and the 33 per-endpoint checkers, each of
 which extends it and adds nothing.
 
 **`BULLDOZER_OPS` is accepted since Bug 67** (2026-08-12). Before that, this module and `tracking` were the
@@ -30,10 +30,9 @@ project. `tracking` was aligned first; this module closes the gap.
 | `GET /crm/connections` | ✓ | ✓ | ✓ | ✓ |  |
 | `GET /crm/connections/{connectionId}` | ✓ | ✓ | ✓ | ✓ |  |
 | `DELETE /crm/connections/{connectionId}` | ✓ | ✓ | ✓ | ✓ | Deletes its containers and stages too |
-| `GET /crm/{connectionId}/remote-containers` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `GET /crm/{connectionId}/properties` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `POST /crm/{connectionId}/containers` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
-| `GET /crm/{connectionId}/containers` | ✓ | ✓ | ✓ | ✓ |  |
+| `GET /crm/{connectionId}/containers` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `GET /crm/{connectionId}/containers/{containerId}` | ✓ | ✓ | ✓ | ✓ |  |
 | `DELETE /crm/{connectionId}/containers/{containerId}` | ✓ | ✓ | ✓ | ✓ | Deletes its stages too |
 | `PUT /crm/{connectionId}/containers/{containerId}/stage-source` | ✓ | ✓ | ✓ | ✓ | Calls the CRM; replaces every stage and mapping |

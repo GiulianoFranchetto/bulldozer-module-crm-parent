@@ -1,4 +1,4 @@
-package com.bulldozer_collective.modules.crm.api;
+package com.bulldozer_collective.modules.crm.gateway;
 
 import lombok.Builder;
 import org.jspecify.annotations.NonNull;

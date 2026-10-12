@@ -11,7 +11,6 @@ import com.bulldozer_collective.modules.crm.api.CrmLead;
 import com.bulldozer_collective.modules.crm.api.CrmObjectRef;
 import com.bulldozer_collective.modules.crm.api.CrmPage;
 import com.bulldozer_collective.modules.crm.api.CrmProperty;
-import com.bulldozer_collective.modules.crm.api.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBuilder;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
@@ -60,8 +59,11 @@ public interface CrmGateway {
 
     // ── containers ───────────────────────────────────────────────────────────
 
-    /** The CRM's pipelines of that type, with their native stages. */
+    /** The CRM's containers grouping that type of record, with their native stages. */
     @NonNull List<CrmRemoteContainer> listRemoteContainers(@NonNull CrmSession session, @NonNull CrmContainerType type);
+
+    /** The CRM's native stage property for that type of record — the default stage source. */
+    @NonNull String nativeStageProperty(@NonNull CrmContainerType type);
 
     /** The properties of the CRM's deals or leads, candidates for a stage source. */
     @NonNull List<CrmProperty> listProperties(@NonNull CrmSession session, @NonNull CrmContainerType type);

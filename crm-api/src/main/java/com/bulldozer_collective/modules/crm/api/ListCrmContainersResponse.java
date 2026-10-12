@@ -4,5 +4,5 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
-public record ListCrmContainersResponse(@NonNull List<CrmContainer> containers) {
+public record ListCrmContainersResponse(@NonNull List<CrmContainerEntry> containers) {
 }

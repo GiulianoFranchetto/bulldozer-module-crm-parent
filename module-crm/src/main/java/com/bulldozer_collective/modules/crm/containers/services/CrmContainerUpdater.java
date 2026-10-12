@@ -1,6 +1,6 @@
 package com.bulldozer_collective.modules.crm.containers.services;
 
-import com.bulldozer_collective.modules.crm.api.CrmRemoteContainer;
+import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.containers.data.CrmContainerEntity;
 import com.bulldozer_collective.modules.crm.gateway.CrmGatewayResolver;
 import com.bulldozer_collective.modules.crm.gateway.CrmSessionOpener;
