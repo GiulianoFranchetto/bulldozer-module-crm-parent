@@ -60,18 +60,16 @@ public class CrmContainerFactory {
         var remotes = new EnumMap<CrmContainerType, List<CrmRemoteContainer>>(CrmContainerType.class);
         var created = new ArrayList<CrmContainerPersister.NewContainer>();
         for (var container : containers) {
-            var name = remotes.computeIfAbsent(container.type(), type -> gateway.listRemoteContainers(session, type))
+            var remote = remotes.computeIfAbsent(container.type(), type -> gateway.listRemoteContainers(session, type))
                     .stream()
                     .filter(candidate -> candidate.remoteId().equals(container.remoteId()))
                     .findFirst()
-                    .map(CrmRemoteContainer::name)
                     .orElseThrow(() -> new NotFoundException("The CRM has no container " + container.remoteId()));
             var stageProperty = container.stagePropertyName() != null
                     ? container.stagePropertyName()
                     : gateway.nativeStageProperty(container.type());
-            var options = this.stageSources.read(session, gateway, container.type(), container.remoteId(),
-                    stageProperty);
-            created.add(new CrmContainerPersister.NewContainer(container.type(), container.remoteId(), name,
+            var options = this.stageSources.read(session, gateway, container.type(), remote, stageProperty);
+            created.add(new CrmContainerPersister.NewContainer(container.type(), container.remoteId(), remote.name(),
                     stageProperty, options));
         }
 

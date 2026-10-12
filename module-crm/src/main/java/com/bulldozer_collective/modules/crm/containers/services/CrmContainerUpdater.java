@@ -1,6 +1,5 @@
 package com.bulldozer_collective.modules.crm.containers.services;
 
-import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.containers.data.CrmContainerEntity;
 import com.bulldozer_collective.modules.crm.gateway.CrmGatewayResolver;
 import com.bulldozer_collective.modules.crm.gateway.CrmSessionOpener;
@@ -53,14 +52,13 @@ public class CrmContainerUpdater {
         var session = this.sessionOpener.open(customerId, projectId, connectionId);
         var gateway = this.gatewayResolver.resolve(session);
 
-        var name = gateway.listRemoteContainers(session, container.getType()).stream()
+        var remote = gateway.listRemoteContainers(session, container.getType()).stream()
                 .filter(candidate -> candidate.remoteId().equals(container.getRemoteId()))
                 .findFirst()
-                .map(CrmRemoteContainer::name)
                 .orElseThrow(() -> new NotFoundException(
                         "The CRM no longer has pipeline " + container.getRemoteId() + "; delete the container"));
-        var options = this.stageSources.read(session, gateway, container.getType(), container.getRemoteId(),
+        var options = this.stageSources.read(session, gateway, container.getType(), remote,
                 container.getStagePropertyName());
-        return this.persister.refresh(container, name, options);
+        return this.persister.refresh(container, remote.name(), options);
     }
 }

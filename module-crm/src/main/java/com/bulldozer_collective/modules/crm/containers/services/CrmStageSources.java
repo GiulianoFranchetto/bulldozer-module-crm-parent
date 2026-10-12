@@ -3,6 +3,7 @@ package com.bulldozer_collective.modules.crm.containers.services;
 import com.bulldozer_collective.modules.crm.api.CrmContainerType;
 import com.bulldozer_collective.modules.crm.containers.data.CrmContainerEntity;
 import com.bulldozer_collective.modules.crm.gateway.CrmGateway;
+import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.gateway.CrmSession;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageOption;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageWrite;
@@ -25,7 +26,28 @@ public class CrmStageSources {
                                               @NonNull CrmContainerType type,
                                               @NonNull String containerRemoteId,
                                               @NonNull String propertyName) {
-        var options = gateway.listStageOptions(session, type, containerRemoteId, propertyName);
+        return checked(gateway.listStageOptions(session, type, containerRemoteId, propertyName), propertyName);
+    }
+
+    /**
+     * As {@link #read(CrmSession, CrmGateway, CrmContainerType, String, String)}, for a container the caller just
+     * listed: its native stages come with it, so the CRM is asked only for a custom property's values.
+     */
+    public @NonNull List<CrmStageOption> read(@NonNull CrmSession session,
+                                              @NonNull CrmGateway gateway,
+                                              @NonNull CrmContainerType type,
+                                              @NonNull CrmRemoteContainer listed,
+                                              @NonNull String propertyName) {
+        if (!gateway.nativeStageProperty(type).equals(propertyName)) {
+            return this.read(session, gateway, type, listed.remoteId(), propertyName);
+        }
+        return checked(listed.stages().stream()
+                .map(stage -> new CrmStageOption(stage.remoteId(), stage.name(), stage.displayOrder()))
+                .toList(), propertyName);
+    }
+
+    private static @NonNull List<CrmStageOption> checked(@NonNull List<CrmStageOption> options,
+                                                         @NonNull String propertyName) {
         if (options.isEmpty()) {
             throw new IllegalArgumentException(("stagePropertyName: '%s' has no fixed list of values in this "
                     + "pipeline; choose an enumerated property").formatted(propertyName));

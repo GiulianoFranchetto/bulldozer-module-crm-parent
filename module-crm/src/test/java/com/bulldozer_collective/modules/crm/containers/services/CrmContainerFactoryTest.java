@@ -30,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -51,7 +53,7 @@ class CrmContainerFactoryTest {
             new CrmContainerPersister(this.containerRepository, this.stageRepository, mock(BulldozerLogger.class)));
 
     @Test
-    @DisplayName("each container gets its own stages, in one saveAll per table")
+    @DisplayName("each container gets its own stages, in one saveAll per table, from one listing of the pipelines")
     void importsInBatch() throws Exception {
         this.given();
         when(this.containerRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -67,6 +69,8 @@ class CrmContainerFactoryTest {
         assertThat(stages.getValue())
                 .extracting(stage -> stage.getContainer().getRemoteId() + "/" + stage.getRemoteId())
                 .containsExactly("sales/sales-1", "renewals/renewals-1");
+        verify(this.gateway, times(1)).listRemoteContainers(any(), any());
+        verify(this.gateway, never()).listStageOptions(any(), any(), any(), any());
     }
 
     @Test
