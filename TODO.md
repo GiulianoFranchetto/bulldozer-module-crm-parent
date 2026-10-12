@@ -20,8 +20,10 @@ Activities are covered by the contacts scopes.
 
 Still required:
 1. Merge the branch and deploy the modulith.
-2. Declare the same scopes in the HubSpot app — the leads ones as optional.
-3. Set `HUBSPOT_CLIENT_ID` and `HUBSPOT_SECRET` in the modulith's environment.
+2. Upload the HubSpot app (`~/Documents/bulldozer/hubspot`, `hs project upload`): it already declares the same
+   scopes — the leads ones as optional — and the redirect URLs `https://bulldozer-os.fr/mcp/callback?platform=hubspot`
+   and `http://localhost:5600/mcp/callback?platform=hubspot`. Its support fields are still placeholders.
+3. Set `HUBSPOT_CLIENT_ID` and `HUBSPOT_SECRET` in the modulith's environment, from the uploaded app.
 4. Every project connected before that reconnects HubSpot: its token carries the read-only scopes, and every write
    answers `424` until then.
 
