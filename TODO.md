@@ -24,7 +24,8 @@ Still required:
    redirect URLs `https://bulldozer-os.fr/mcp/callback?platform=hubspot` and
    `http://localhost:5600/mcp/callback?platform=hubspot`, and `dev@bulldozer-collective.com` as support email. It is
    uploaded (build #1, 2026-10-12) to the **test account** `Bulldozer_OS_test` (146651817) only.
-3. Set `HUBSPOT_CLIENT_ID` and `HUBSPOT_SECRET` in the modulith's environment, from the uploaded app.
+3. `HUBSPOT_CLIENT_ID` and `HUBSPOT_SECRET` (the test account's app) are in `backend/.keys.env` since 2026-10-12;
+   set them in the deployed modulith's environment too.
 4. Every project connected before that reconnects HubSpot: its token carries the read-only scopes, and every write
    answers `424` until then.
 
