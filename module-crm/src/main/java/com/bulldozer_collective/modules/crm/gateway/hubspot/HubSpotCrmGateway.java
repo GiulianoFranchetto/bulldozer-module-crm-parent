@@ -21,6 +21,7 @@ import com.bulldozer_collective.modules.crm.gateway.CrmGateway;
 import com.bulldozer_collective.modules.crm.gateway.CrmSession;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageOption;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageWrite;
+import com.bulldozer_collective.modules.crm.gateway.CrmUpstreamException;
 import com.bulldozer_collective.modules.crm.gateway.ListCrmObjectsBuilder;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotObject;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotPipeline;
@@ -363,7 +364,7 @@ public class HubSpotCrmGateway implements CrmGateway {
         var response = this.clientFactory.create(session.accessToken())
                 .send(HttpMethod.POST, objectPath(type), body, OBJECT);
         if (response == null || response.id() == null) {
-            throw new IllegalStateException("HubSpot answered a create without an id");
+            throw new CrmUpstreamException("HubSpot answered a create without an id");
         }
         return response.id();
     }

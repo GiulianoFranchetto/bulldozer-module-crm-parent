@@ -2,6 +2,7 @@ package com.bulldozer_collective.modules.crm.configurations;
 
 import com.bulldozer_collective.logging.BulldozerLogger;
 import com.bulldozer_collective.modules.crm.gateway.CrmAuthorizationException;
+import com.bulldozer_collective.modules.crm.gateway.CrmUpstreamException;
 import com.bulldozer_collective.modules.crm.gateway.NoTokenException;
 import com.bulldozer_collective.shared.exceptions.BadRequestException;
 import com.bulldozer_collective.shared.exceptions.BulldozerException;
@@ -244,6 +245,13 @@ public class GlobalControllerAdviser {
         // 429 or a 5xx still failing after the retries, a timeout. Answer a stable 502 rather than leaking the
         // downstream status to our caller.
         this.logger.warn(op("CRM-006") + "Upstream dependency failed: %s", e.getMessage());
+        return ResponseEntity.status(502).build();
+    }
+
+    /** The CRM answered something the bridge cannot use. Its detail stays in the logs, like any 5xx. */
+    @ExceptionHandler(CrmUpstreamException.class)
+    public ResponseEntity<Void> on(CrmUpstreamException e) {
+        this.logger.warn(op("CRM-006") + "Unusable CRM answer: %s", e.getMessage());
         return ResponseEntity.status(502).build();
     }
 

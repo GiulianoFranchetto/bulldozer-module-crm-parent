@@ -1,6 +1,7 @@
 package com.bulldozer_collective.modules.crm.gateway.hubspot;
 
 import com.bulldozer_collective.logging.BulldozerLogger;
+import com.bulldozer_collective.shared.exceptions.InternalException;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -69,7 +70,7 @@ public class HubSpotRequestExecutor {
 
         this.logger.error(op("CRM-002") + "HubSpot call '%s' still failing after %d attempts",
                 description, attempts);
-        throw last != null ? last : new IllegalStateException("HubSpot call failed: " + description);
+        throw last != null ? last : new InternalException("HubSpot call failed: " + description);
     }
 
     private void pause(@NonNull String description, int attempt, @Nullable Duration retryAfter) {
@@ -129,7 +130,7 @@ public class HubSpotRequestExecutor {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while waiting for HubSpot", e);
+            throw new InternalException("Interrupted while waiting for HubSpot", e);
         }
     }
 }
