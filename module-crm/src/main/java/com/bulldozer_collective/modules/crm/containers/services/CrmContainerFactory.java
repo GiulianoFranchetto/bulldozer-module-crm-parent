@@ -7,9 +7,11 @@ import com.bulldozer_collective.modules.crm.gateway.CrmGatewayResolver;
 import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.gateway.CrmSessionOpener;
 import com.bulldozer_collective.modules.crm.gateway.NoTokenException;
+import com.bulldozer_collective.shared.exceptions.ConflictException;
 import com.bulldozer_collective.shared.exceptions.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -34,6 +36,7 @@ public class CrmContainerFactory {
      * containers are written in one transaction afterwards.
      *
      * @throws NotFoundException        when the CRM has no such container.
+     * @throws ConflictException        when a container is already imported on that connection.
      * @throws IllegalArgumentException when a container is listed twice, or a property does not exist or is not
      *                                  enumerated.
      */
@@ -72,6 +75,11 @@ public class CrmContainerFactory {
                     stageProperty, options));
         }
 
-        return this.persister.create(connection, created);
+        try {
+            return this.persister.create(connection, created);
+        } catch (DataIntegrityViolationException e) {
+            // Two concurrent imports passed the duplicate check: the unique constraint let one through.
+            throw new ConflictException("Already imported: one of these containers was imported meanwhile");
+        }
     }
 }

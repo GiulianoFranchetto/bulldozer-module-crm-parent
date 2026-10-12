@@ -58,20 +58,24 @@ public class CrmContainerPersister {
             throw new ConflictException("Already imported: " + String.join(", ", duplicates));
         }
 
-        var saved = new ArrayList<CrmContainerEntity>();
+        var saved = this.containerRepository.saveAll(containers.stream()
+                .map(container -> {
+                    var entity = new CrmContainerEntity();
+                    entity.setCustomerId(connection.getCustomerId());
+                    entity.setProjectId(connection.getProjectId());
+                    entity.setConnection(connection);
+                    entity.setType(container.type());
+                    entity.setRemoteId(container.remoteId());
+                    entity.setName(container.name());
+                    entity.setStagePropertyName(container.stagePropertyName());
+                    return entity;
+                })
+                .toList());
+        // saveAll answers in the order it was given: saved.get(i) is containers.get(i).
         var stages = new ArrayList<CrmContainerStageEntity>();
-        for (var container : containers) {
-            var entity = new CrmContainerEntity();
-            entity.setCustomerId(connection.getCustomerId());
-            entity.setProjectId(connection.getProjectId());
-            entity.setConnection(connection);
-            entity.setType(container.type());
-            entity.setRemoteId(container.remoteId());
-            entity.setName(container.name());
-            entity.setStagePropertyName(container.stagePropertyName());
-            var persisted = this.containerRepository.save(entity);
-            saved.add(persisted);
-            container.options().forEach(option -> stages.add(newStage(persisted, option)));
+        for (var i = 0; i < saved.size(); i++) {
+            var persisted = saved.get(i);
+            containers.get(i).options().forEach(option -> stages.add(newStage(persisted, option)));
         }
         this.stageRepository.saveAll(stages);
 
