@@ -17,6 +17,11 @@ public final class CrmConstraints {
     /** Bound on a free-text field written to the CRM (HubSpot caps a note body at 65,536 characters). */
     public static final int LONG_TEXT = 65_536;
 
+    /** An ISO 4217 currency code, as the CRM stores it: three uppercase letters. */
+    public static final String CURRENCY = "[A-Z]{3}";
+
+    public static final String CURRENCY_MESSAGE = "must be an ISO 4217 code: 3 uppercase letters";
+
     private CrmConstraints() {
     }
 }

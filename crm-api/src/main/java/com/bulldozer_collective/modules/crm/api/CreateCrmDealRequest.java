@@ -2,6 +2,7 @@ package com.bulldozer_collective.modules.crm.api;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import org.jspecify.annotations.NonNull;
@@ -19,7 +20,9 @@ import java.time.Instant;
 public record CreateCrmDealRequest(@NonNull @NotBlank @Size(max = CrmConstraints.SHORT_TEXT) String name,
                                    @NonNull @NotNull CrmDealStage stage,
                                    @Nullable @PositiveOrZero BigDecimal amount,
-                                   @Nullable @Size(min = 3, max = 3) String currency,
+                                   @Nullable
+                                   @Pattern(regexp = CrmConstraints.CURRENCY, message = CrmConstraints.CURRENCY_MESSAGE)
+                                   String currency,
                                    @Nullable Instant closeDate,
                                    @Nullable @Size(max = CrmConstraints.SHORT_TEXT) String pipelineStage) {
 }

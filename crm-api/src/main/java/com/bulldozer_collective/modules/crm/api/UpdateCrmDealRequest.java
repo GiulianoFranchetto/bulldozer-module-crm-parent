@@ -1,5 +1,6 @@
 package com.bulldozer_collective.modules.crm.api;
 
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import org.jspecify.annotations.Nullable;
@@ -11,6 +12,8 @@ import java.time.Instant;
 public record UpdateCrmDealRequest(@Nullable @Size(max = CrmConstraints.SHORT_TEXT) String name,
                                    @Nullable CrmDealStage stage,
                                    @Nullable @PositiveOrZero BigDecimal amount,
-                                   @Nullable @Size(min = 3, max = 3) String currency,
+                                   @Nullable
+                                   @Pattern(regexp = CrmConstraints.CURRENCY, message = CrmConstraints.CURRENCY_MESSAGE)
+                                   String currency,
                                    @Nullable Instant closeDate) {
 }
