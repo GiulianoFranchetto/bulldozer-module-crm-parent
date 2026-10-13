@@ -71,7 +71,8 @@ public interface CrmGateway {
     /**
      * The values {@code propertyName} can take in the container — empty when the property is free-form.
      *
-     * @throws IllegalArgumentException when the CRM has no such property.
+     * @throws IllegalArgumentException when the CRM has no such property, or it is read-only: a stage could never be
+     *                                  written to it.
      */
     @NonNull List<CrmStageOption> listStageOptions(@NonNull CrmSession session,
                                                    @NonNull CrmContainerType type,

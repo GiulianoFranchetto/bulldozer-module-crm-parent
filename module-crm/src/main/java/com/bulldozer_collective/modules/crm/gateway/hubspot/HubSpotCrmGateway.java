@@ -188,6 +188,15 @@ public class HubSpotCrmGateway implements CrmGateway {
         return this.listProperties(session, type).stream()
                 .filter(property -> property.name().equals(propertyName))
                 .findFirst()
+                .map(property -> {
+                    // A calculated or HubSpot-managed property reads fine, but every stage write to it would fail.
+                    if (property.readOnly()) {
+                        throw new IllegalArgumentException(("stagePropertyName: '%s' is read-only in HubSpot, so "
+                                + "Bulldozer could not write a stage to it; choose a writable property")
+                                .formatted(propertyName));
+                    }
+                    return property;
+                })
                 .map(property -> property.options().stream()
                         .filter(option -> !option.hidden())
                         .map(option -> new CrmStageOption(option.value(), option.label(), option.displayOrder()))
