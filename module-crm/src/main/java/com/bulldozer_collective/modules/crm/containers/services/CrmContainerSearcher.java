@@ -112,12 +112,21 @@ public class CrmContainerSearcher {
         return entries;
     }
 
+    /**
+     * @param name       only the property of that name, when given.
+     * @param selectable only the enumerated, writable properties: those a value can be picked from and written.
+     */
     public @NonNull List<CrmProperty> listProperties(@NonNull UUID customerId,
                                                      @NonNull UUID projectId,
                                                      @NonNull UUID connectionId,
-                                                     @NonNull CrmObjectType type) throws NoTokenException {
+                                                     @NonNull CrmObjectType type,
+                                                     @Nullable String name,
+                                                     boolean selectable) throws NoTokenException {
         var session = this.sessionOpener.open(customerId, projectId, connectionId);
-        return this.gatewayResolver.resolve(session).listProperties(session, type);
+        return this.gatewayResolver.resolve(session).listProperties(session, type).stream()
+                .filter(property -> name == null || property.name().equals(name))
+                .filter(property -> !selectable || (!property.readOnly() && !property.options().isEmpty()))
+                .toList();
     }
 
     private static @Nullable CrmContainerEntity find(@NonNull List<CrmContainerEntity> imported,

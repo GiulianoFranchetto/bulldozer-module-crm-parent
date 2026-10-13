@@ -2,6 +2,9 @@ package com.bulldozer_collective.modules.crm.containers.services;
 
 import com.bulldozer_collective.modules.crm.api.CrmContainerEntry;
 import com.bulldozer_collective.modules.crm.api.CrmContainerType;
+import com.bulldozer_collective.modules.crm.api.CrmObjectType;
+import com.bulldozer_collective.modules.crm.api.CrmProperty;
+import com.bulldozer_collective.modules.crm.api.CrmPropertyOption;
 import com.bulldozer_collective.modules.crm.containers.data.CrmContainerEntity;
 import com.bulldozer_collective.modules.crm.gateway.CrmGateway;
 import com.bulldozer_collective.modules.crm.gateway.CrmGatewayResolver;
@@ -112,6 +115,31 @@ class CrmContainerSearcherTest {
         assertThatThrownBy(() -> this.searcher.list(CUSTOMER, PROJECT, CONNECTION,
                 CrmContainerType.CRM_CONTAINER_TYPE_LEAD))
                 .isInstanceOf(CrmAuthorizationException.class);
+    }
+
+    @Test
+    @DisplayName("properties filter on name, and on what a value can be picked from and written")
+    void filtersProperties() throws Exception {
+        this.given(List.of(), null, List.of());
+        when(this.gateway.listProperties(any(), eq(CrmObjectType.CRM_OBJECT_TYPE_CONTACT))).thenReturn(List.of(
+                property("hs_legal_basis", false, true),
+                property("email", false, false),
+                property("hs_analytics_source", true, true)));
+
+        assertThat(this.searcher.listProperties(CUSTOMER, PROJECT, CONNECTION, CrmObjectType.CRM_OBJECT_TYPE_CONTACT,
+                "hs_legal_basis", false)).extracting(CrmProperty::name).containsExactly("hs_legal_basis");
+        assertThat(this.searcher.listProperties(CUSTOMER, PROJECT, CONNECTION, CrmObjectType.CRM_OBJECT_TYPE_CONTACT,
+                null, true)).extracting(CrmProperty::name).containsExactly("hs_legal_basis");
+        assertThat(this.searcher.listProperties(CUSTOMER, PROJECT, CONNECTION, CrmObjectType.CRM_OBJECT_TYPE_CONTACT,
+                null, false)).hasSize(3);
+    }
+
+    private static CrmProperty property(String name, boolean readOnly, boolean enumerated) {
+        return CrmProperty.builder().name(name).label(name).type("enumeration").readOnly(readOnly)
+                .options(enumerated
+                        ? List.of(CrmPropertyOption.builder().value("a").label("A").displayOrder(0).build())
+                        : List.of())
+                .build();
     }
 
     private void given(List<CrmContainerEntity> imported, CrmContainerType type, List<CrmRemoteContainer> remote)

@@ -1,6 +1,6 @@
 package com.bulldozer_collective.modules.crm.containers.controllers;
 
-import com.bulldozer_collective.modules.crm.api.CrmObjectTypeParam;
+import com.bulldozer_collective.modules.crm.api.ListCrmPropertiesParam;
 import com.bulldozer_collective.modules.crm.api.ListCrmPropertiesResponse;
 import com.bulldozer_collective.modules.crm.containers.security.ListCrmPropertiesAccessChecker;
 import com.bulldozer_collective.modules.crm.containers.services.CrmContainerSearcher;
@@ -29,12 +29,14 @@ public class ListCrmPropertiesController {
     @GetMapping
     public ListCrmPropertiesResponse list(@JwtRequestContext RequestContext context,
                                           @PathVariable @NonNull UUID connectionId,
-                                          @Valid @NonNull CrmObjectTypeParam param) throws NoTokenException {
+                                          @Valid @NonNull ListCrmPropertiesParam param) throws NoTokenException {
         this.accessChecker.checkAccess(context);
         return new ListCrmPropertiesResponse(this.searcher.listProperties(
                 Objects.requireNonNull(context.targetCustomerId()),
                 Objects.requireNonNull(context.projectId()),
                 connectionId,
-                param.type()));
+                param.type(),
+                param.name(),
+                Boolean.TRUE.equals(param.selectable())));
     }
 }
