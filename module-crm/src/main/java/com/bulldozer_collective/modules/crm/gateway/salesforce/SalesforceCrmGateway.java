@@ -16,8 +16,11 @@ import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBuilder;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
+import com.bulldozer_collective.modules.crm.gateway.CrmBulkResult;
 import com.bulldozer_collective.modules.crm.gateway.CrmContainedRecord;
 import com.bulldozer_collective.modules.crm.gateway.CrmGateway;
+import com.bulldozer_collective.modules.crm.gateway.CrmLink;
+import com.bulldozer_collective.modules.crm.gateway.CrmNote;
 import com.bulldozer_collective.modules.crm.gateway.CrmSession;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageOption;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageWrite;
@@ -28,7 +31,10 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Salesforce is not implemented yet: the modulith has no Salesforce OAuth flow. Every call answers {@code 501}.
@@ -204,6 +210,77 @@ public class SalesforceCrmGateway implements CrmGateway {
     public void dissociate(@NonNull CrmSession session,
                            @NonNull CrmObjectRef from,
                            @NonNull CrmObjectRef to) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull List<CrmContact> findContactsByEmail(@NonNull CrmSession session,
+                                                         @NonNull Collection<String> emails) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull List<CrmContact> findContactsByName(@NonNull CrmSession session,
+                                                        @NonNull String firstName,
+                                                        @NonNull String lastName) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull List<CrmCompany> findCompaniesByDomain(@NonNull CrmSession session,
+                                                           @NonNull Collection<String> domains) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull List<CrmCompany> findCompaniesByName(@NonNull CrmSession session, @NonNull String name) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull CrmBulkResult<CrmContact> createContacts(@NonNull CrmSession session,
+                                                            @NonNull List<SaveCrmContactBuilder> contacts) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull CrmBulkResult<String> updateContacts(@NonNull CrmSession session,
+                                                         @NonNull List<String> ids,
+                                                         @NonNull List<SaveCrmContactBuilder> contacts) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull CrmBulkResult<CrmCompany> createCompanies(@NonNull CrmSession session,
+                                                             @NonNull List<SaveCrmCompanyBuilder> companies) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull CrmBulkResult<String> updateCompanies(@NonNull CrmSession session,
+                                                          @NonNull List<String> ids,
+                                                          @NonNull List<SaveCrmCompanyBuilder> companies) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull Map<String, Set<String>> listAssociatedIds(@NonNull CrmSession session,
+                                                               @NonNull CrmObjectType from,
+                                                               @NonNull Collection<String> fromIds,
+                                                               @NonNull CrmObjectType to) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull List<String> associateAll(@NonNull CrmSession session,
+                                              @NonNull CrmObjectType from,
+                                              @NonNull CrmObjectType to,
+                                              @NonNull List<CrmLink> links) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull CrmBulkResult<String> createNotes(@NonNull CrmSession session, @NonNull List<CrmNote> notes) {
         throw notSupported();
     }
 

@@ -15,6 +15,7 @@ import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBui
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
 import com.bulldozer_collective.modules.crm.gateway.CrmContainedRecord;
+import com.bulldozer_collective.modules.crm.gateway.CrmNote;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageWrite;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotObject;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotPipeline;
@@ -176,6 +177,13 @@ final class HubSpotMapper {
         put(properties, "phone", contact.phone());
         put(properties, "jobtitle", contact.jobTitle());
         put(properties, "hs_legal_basis", contact.legalBasis());
+        return properties;
+    }
+
+    static @NonNull Map<String, String> note(@NonNull CrmNote note) {
+        var properties = new LinkedHashMap<String, String>();
+        properties.put(ActivityProperties.of(CrmActivityType.CRM_ACTIVITY_TYPE_NOTE).body(), note.body());
+        properties.put(ActivityProperties.TIMESTAMP, note.timestamp().toString());
         return properties;
     }
 

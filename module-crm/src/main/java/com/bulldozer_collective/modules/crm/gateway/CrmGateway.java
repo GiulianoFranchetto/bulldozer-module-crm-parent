@@ -20,7 +20,10 @@ import com.bulldozer_collective.shared.IntegrationPlatform;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Façade over one CRM. Each implementation translates between the module's own model ({@code crm-api}) and the
@@ -139,4 +142,55 @@ public interface CrmGateway {
     void associate(@NonNull CrmSession session, @NonNull CrmObjectRef from, @NonNull CrmObjectRef to);
 
     void dissociate(@NonNull CrmSession session, @NonNull CrmObjectRef from, @NonNull CrmObjectRef to);
+
+    // ── bulk, for imports ────────────────────────────────────────────────────
+
+    /** The contacts holding one of these emails; an email no contact holds is simply absent. */
+    @NonNull List<CrmContact> findContactsByEmail(@NonNull CrmSession session, @NonNull Collection<String> emails);
+
+    /** The contacts with exactly that first and last name. */
+    @NonNull List<CrmContact> findContactsByName(@NonNull CrmSession session,
+                                                 @NonNull String firstName,
+                                                 @NonNull String lastName);
+
+    /** The companies with one of these domains. */
+    @NonNull List<CrmCompany> findCompaniesByDomain(@NonNull CrmSession session, @NonNull Collection<String> domains);
+
+    /** The companies with exactly that name. */
+    @NonNull List<CrmCompany> findCompaniesByName(@NonNull CrmSession session, @NonNull String name);
+
+    @NonNull CrmBulkResult<CrmContact> createContacts(@NonNull CrmSession session,
+                                                     @NonNull List<SaveCrmContactBuilder> contacts);
+
+    /** @return the ids written, and the refused updates keyed by their index in {@code ids}. */
+    @NonNull CrmBulkResult<String> updateContacts(@NonNull CrmSession session,
+                                                  @NonNull List<String> ids,
+                                                  @NonNull List<SaveCrmContactBuilder> contacts);
+
+    @NonNull CrmBulkResult<CrmCompany> createCompanies(@NonNull CrmSession session,
+                                                      @NonNull List<SaveCrmCompanyBuilder> companies);
+
+    /** @return the ids written, and the refused updates keyed by their index in {@code ids}. */
+    @NonNull CrmBulkResult<String> updateCompanies(@NonNull CrmSession session,
+                                                   @NonNull List<String> ids,
+                                                   @NonNull List<SaveCrmCompanyBuilder> companies);
+
+    /** For each of {@code fromIds}, the ids of the {@code to} records it is associated with. */
+    @NonNull Map<String, Set<String>> listAssociatedIds(@NonNull CrmSession session,
+                                                        @NonNull CrmObjectType from,
+                                                        @NonNull Collection<String> fromIds,
+                                                        @NonNull CrmObjectType to);
+
+    /**
+     * Creates the default association of each link.
+     *
+     * @return the CRM's message for each refused batch or link — the CRM does not always tell which link it refused.
+     */
+    @NonNull List<String> associateAll(@NonNull CrmSession session,
+                                       @NonNull CrmObjectType from,
+                                       @NonNull CrmObjectType to,
+                                       @NonNull List<CrmLink> links);
+
+    /** Logs each note on its contact or company; {@code done} holds the ids of the notes created. */
+    @NonNull CrmBulkResult<String> createNotes(@NonNull CrmSession session, @NonNull List<CrmNote> notes);
 }

@@ -14,7 +14,7 @@ Access rules of every **authenticated, non-internal** endpoint. The module expos
 | ✓ | Allowed |
 | *(empty)* | Denied |
 
-Every rule below comes from `security/DefaultAccessChecker.java` and the 33 per-endpoint checkers, each of
+Every rule below comes from `security/DefaultAccessChecker.java` and the 34 per-endpoint checkers, each of
 which extends it and adds nothing.
 
 **`BULLDOZER_OPS` is accepted since Bug 67** (2026-08-12). Before that, this module and `tracking` were the
@@ -59,6 +59,7 @@ project. `tracking` was aligned first; this module closes the gap.
 | `POST /crm/{connectionId}/activities` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
 | `PUT /crm/{connectionId}/associations` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
 | `DELETE /crm/{connectionId}/associations` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
+| `POST /crm/{connectionId}/lead-list-imports` | ✓ | ✓ | ✓ | ✓ | Reads a lead list of the project (outbound, internal route), writes to the CRM |
 
 **No endpoint carries `@FeatureNeeded`** — the module has no subscription gate. This is a deliberate, current
 decision: the CRM bridge is not on sale separately yet. Revisit when it is.

@@ -36,7 +36,16 @@ through the API (community thread 122975). Still unconfirmed: the lead pipelines
 (Sales Hub Pro or Enterprise) before relying on lead containers: the test portal lists no lead pipeline, even with
 the leads scopes granted (2026-10-13).
 
-## 4. Salesforce
+## 4. Lead list import
+
+`POST /crm/{connectionId}/lead-list-imports` reads the list's leads through the outbound module's new internal route
+`GET /internal/outbound/lead-lists/{id}/leads` (`InternalListLeadListLeadsClient`), committed on the outbound branch
+`lead-list-v2` (`0ec39b6`), which also carries the company leads. Until that branch is merged and deployed, every
+import fails on reading the leads. Still to check on a portal: the note → company association type `190`
+(`HubSpotCrmGateway.NOTE_TO_COMPANY_ASSOCIATION_TYPE`; note → contact `202` is in HubSpot's notes guide), and the
+plural object names in the associations batch paths.
+
+## 5. Salesforce
 
 `SalesforceCrmGateway` answers `501`, and `CrmConnectionFactory` refuses Salesforce connections. To implement:
 1. Add the Salesforce OAuth flow to the modulith (same places as HubSpot).
@@ -47,7 +56,7 @@ the leads scopes granted (2026-10-13).
 4. Implement `SalesforceCrmGateway` against the REST API reference (no guessed paths), then lift the refusal in
    `CrmConnectionFactory`.
 
-## 5. Frontend
+## 6. Frontend
 
 Found while testing on the HubSpot test portal (2026-10-13):
 1. Reconnecting HubSpot must only rerun the OAuth flow: deleting and re-registering the CRM connection deletes its

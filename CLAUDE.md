@@ -23,11 +23,11 @@ profile (`dev` / `prod` set the datasource).
 - `crm-api` — the HTTP contract (requests, responses, `*Param` query records, enums), shared with consumers. Never
   passed to a service: controllers map it onto `*Builder` records.
 - `module-crm` — one package per domain (`connections`, `containers`, `contacts`, `companies`, `deals`, `leads`,
-  `activities`, `associations`), each split into `controllers` / `security` / `services`, plus `gateway`.
+  `activities`, `associations`, `imports`), each split into `controllers` / `security` / `services`, plus `gateway`.
 
 # Access control
 `security/DefaultAccessChecker` grants access to `BULLDOZER_ADMINISTRATOR`, `BULLDOZER_OPS`, the target
-customer's administrator, then any project membership — aligned on the rest of the fleet since Bug 67. The 33
+customer's administrator, then any project membership — aligned on the rest of the fleet since Bug 67. The 34
 per-endpoint checkers are pure `super.checkAccess(context)` pass-throughs, and no endpoint carries
 `@FeatureNeeded`. Full table in `RBAC.md`, to keep in sync whenever an endpoint or a checker changes.
 

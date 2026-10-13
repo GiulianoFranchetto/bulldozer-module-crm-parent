@@ -69,6 +69,16 @@
             <version>${projects-api.version}</version>
         </dependency>
         <dependency>
+            <groupId>bulldozer-collective</groupId>
+            <artifactId>outbound-api</artifactId>
+            <version>${outbound-api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>bulldozer-collective</groupId>
+            <artifactId>companies-api</artifactId>
+            <version>${companies-api.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>

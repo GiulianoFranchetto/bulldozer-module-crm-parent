@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  *                   list (HubSpot: an option of {@code hs_legal_basis}, required by a portal with its GDPR features
  *                   on). Not a field of the contact on its own: {@link #isEmpty()} ignores it.
  */
-@Builder
+@Builder(toBuilder = true)
 public record SaveCrmContactBuilder(@Nullable String firstName,
                                     @Nullable String lastName,
                                     @Nullable String email,
