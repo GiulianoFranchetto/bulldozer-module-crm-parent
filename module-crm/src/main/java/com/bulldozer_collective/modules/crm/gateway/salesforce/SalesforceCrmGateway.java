@@ -6,6 +6,7 @@ import com.bulldozer_collective.modules.crm.api.CrmActivityType;
 import com.bulldozer_collective.modules.crm.api.CrmCompany;
 import com.bulldozer_collective.modules.crm.api.CrmContact;
 import com.bulldozer_collective.modules.crm.api.CrmContainerType;
+import com.bulldozer_collective.modules.crm.api.CrmObjectType;
 import com.bulldozer_collective.modules.crm.api.CrmDeal;
 import com.bulldozer_collective.modules.crm.api.CrmLead;
 import com.bulldozer_collective.modules.crm.api.CrmObjectRef;
@@ -106,7 +107,7 @@ public class SalesforceCrmGateway implements CrmGateway {
 
     @Override
     public @NonNull List<CrmProperty> listProperties(@NonNull CrmSession session,
-                                                     @NonNull CrmContainerType type) {
+                                                     @NonNull CrmObjectType type) {
         throw notSupported();
     }
 

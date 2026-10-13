@@ -3,6 +3,7 @@ package com.bulldozer_collective.modules.crm.gateway.hubspot;
 import com.bulldozer_collective.modules.crm.activities.services.CreateCrmActivityBuilder;
 import com.bulldozer_collective.modules.crm.api.CrmActivityType;
 import com.bulldozer_collective.modules.crm.api.CrmLeadStage;
+import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageWrite;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotObject;
@@ -40,6 +41,18 @@ class HubSpotMapperTest {
         assertThat(record.item().stage()).isNull();
         assertThat(record.item().containerId()).isNull();
         assertThat(record.properties()).containsEntry("bdz_stage", "signed");
+    }
+
+    @Test
+    @DisplayName("a contact's legal basis is written to hs_legal_basis, and nothing when absent")
+    void contactLegalBasis() {
+        var withBasis = HubSpotMapper.contact(SaveCrmContactBuilder.builder()
+                .email("a@b.c").legalBasis("Legitimate interest – prospect/lead").build());
+        var without = HubSpotMapper.contact(SaveCrmContactBuilder.builder().email("a@b.c").build());
+
+        assertThat(withBasis).containsEntry("hs_legal_basis", "Legitimate interest – prospect/lead");
+        assertThat(without).doesNotContainKey("hs_legal_basis");
+        assertThat(SaveCrmContactBuilder.builder().legalBasis("x").build().isEmpty()).isTrue();
     }
 
     @Test

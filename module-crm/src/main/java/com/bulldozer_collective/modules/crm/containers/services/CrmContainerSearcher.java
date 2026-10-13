@@ -3,6 +3,7 @@ package com.bulldozer_collective.modules.crm.containers.services;
 import com.bulldozer_collective.modules.crm.api.CrmContainerEntry;
 import com.bulldozer_collective.modules.crm.api.CrmContainerEntryStage;
 import com.bulldozer_collective.modules.crm.api.CrmContainerType;
+import com.bulldozer_collective.modules.crm.api.CrmObjectType;
 import com.bulldozer_collective.modules.crm.api.CrmProperty;
 import com.bulldozer_collective.modules.crm.containers.data.CrmContainerEntity;
 import com.bulldozer_collective.modules.crm.gateway.CrmGatewayResolver;
@@ -114,7 +115,7 @@ public class CrmContainerSearcher {
     public @NonNull List<CrmProperty> listProperties(@NonNull UUID customerId,
                                                      @NonNull UUID projectId,
                                                      @NonNull UUID connectionId,
-                                                     @NonNull CrmContainerType type) throws NoTokenException {
+                                                     @NonNull CrmObjectType type) throws NoTokenException {
         var session = this.sessionOpener.open(customerId, projectId, connectionId);
         return this.gatewayResolver.resolve(session).listProperties(session, type);
     }

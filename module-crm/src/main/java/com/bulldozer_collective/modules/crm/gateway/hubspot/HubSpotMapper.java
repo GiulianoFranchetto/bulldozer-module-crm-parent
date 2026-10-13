@@ -175,6 +175,7 @@ final class HubSpotMapper {
         put(properties, "email", contact.email());
         put(properties, "phone", contact.phone());
         put(properties, "jobtitle", contact.jobTitle());
+        put(properties, "hs_legal_basis", contact.legalBasis());
         return properties;
     }
 

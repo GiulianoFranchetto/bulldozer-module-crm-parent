@@ -153,10 +153,9 @@ public class HubSpotCrmGateway implements CrmGateway {
     }
 
     @Override
-    public @NonNull List<CrmProperty> listProperties(@NonNull CrmSession session, @NonNull CrmContainerType type) {
-        var kind = HubSpotContainerKind.of(type);
+    public @NonNull List<CrmProperty> listProperties(@NonNull CrmSession session, @NonNull CrmObjectType type) {
         var response = this.clientFactory.create(session)
-                .get(List.of("crm", "properties", API_VERSION, kind.propertiesPath()), Map.of(), PROPERTIES);
+                .get(List.of("crm", "properties", API_VERSION, HubSpotObjectTypes.plural(type)), Map.of(), PROPERTIES);
         return results(response).stream()
                 .filter(property -> property.name() != null
                         && !Boolean.TRUE.equals(property.archived())
@@ -185,7 +184,7 @@ public class HubSpotCrmGateway implements CrmGateway {
                             .toList())
                     .orElseThrow(() -> new NotFoundException("HubSpot: no pipeline " + containerRemoteId));
         }
-        return this.listProperties(session, type).stream()
+        return this.listProperties(session, kind.objectType()).stream()
                 .filter(property -> property.name().equals(propertyName))
                 .findFirst()
                 .map(property -> {

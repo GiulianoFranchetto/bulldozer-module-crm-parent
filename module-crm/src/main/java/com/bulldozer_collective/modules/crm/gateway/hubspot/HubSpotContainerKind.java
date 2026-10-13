@@ -14,21 +14,18 @@ import org.jspecify.annotations.NonNull;
  *
  * @param pipelineTypeId     the object type id the pipelines endpoint is documented with.
  * @param objectType         the records grouped by the pipeline.
- * @param propertiesPath     the object name of the properties endpoint.
  * @param pipelineProperty   the property holding a record's pipeline id.
  * @param nativeStageProperty the property holding a record's native stage id, specific to its pipeline.
  */
 record HubSpotContainerKind(@NonNull String pipelineTypeId,
                             @NonNull CrmObjectType objectType,
-                            @NonNull String propertiesPath,
                             @NonNull String pipelineProperty,
                             @NonNull String nativeStageProperty) {
 
     static final HubSpotContainerKind DEALS =
-            new HubSpotContainerKind("0-3", CrmObjectType.CRM_OBJECT_TYPE_DEAL, "deals", "pipeline", "dealstage");
+            new HubSpotContainerKind("0-3", CrmObjectType.CRM_OBJECT_TYPE_DEAL, "pipeline", "dealstage");
     static final HubSpotContainerKind LEADS =
-            new HubSpotContainerKind("0-136", CrmObjectType.CRM_OBJECT_TYPE_LEAD, "leads", "hs_pipeline",
-                    "hs_pipeline_stage");
+            new HubSpotContainerKind("0-136", CrmObjectType.CRM_OBJECT_TYPE_LEAD, "hs_pipeline", "hs_pipeline_stage");
 
     static @NonNull HubSpotContainerKind of(@NonNull CrmContainerType type) {
         return switch (type) {

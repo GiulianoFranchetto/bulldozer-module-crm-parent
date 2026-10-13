@@ -46,6 +46,7 @@ public class CreateCrmContactController {
                         .email(request.email())
                         .phone(request.phone())
                         .jobTitle(request.jobTitle())
+                        .legalBasis(request.legalBasis())
                         .build());
         return new CreateCrmContactResponse(contact);
     }

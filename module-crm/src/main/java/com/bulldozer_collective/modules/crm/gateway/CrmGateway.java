@@ -6,6 +6,7 @@ import com.bulldozer_collective.modules.crm.api.CrmActivityType;
 import com.bulldozer_collective.modules.crm.api.CrmCompany;
 import com.bulldozer_collective.modules.crm.api.CrmContact;
 import com.bulldozer_collective.modules.crm.api.CrmContainerType;
+import com.bulldozer_collective.modules.crm.api.CrmObjectType;
 import com.bulldozer_collective.modules.crm.api.CrmDeal;
 import com.bulldozer_collective.modules.crm.api.CrmLead;
 import com.bulldozer_collective.modules.crm.api.CrmObjectRef;
@@ -65,8 +66,11 @@ public interface CrmGateway {
     /** The CRM's native stage property for that type of record — the default stage source. */
     @NonNull String nativeStageProperty(@NonNull CrmContainerType type);
 
-    /** The properties of the CRM's deals or leads, candidates for a stage source. */
-    @NonNull List<CrmProperty> listProperties(@NonNull CrmSession session, @NonNull CrmContainerType type);
+    /**
+     * The properties of a type of CRM record: for deals and leads, the candidates for a stage source; for contacts, the
+     * options of a field such as the legal basis.
+     */
+    @NonNull List<CrmProperty> listProperties(@NonNull CrmSession session, @NonNull CrmObjectType type);
 
     /**
      * The values {@code propertyName} can take in the container — empty when the property is free-form.
