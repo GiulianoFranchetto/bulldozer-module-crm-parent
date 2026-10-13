@@ -18,16 +18,14 @@ Bulldozer modify their CRM (`allowWrite` on the modulith's OAuth start, see `INT
 `crm.objects.leads.read` is optional too: it exists on Sales Hub Pro / Enterprise only, and HubSpot drops it on
 other accounts instead of failing the install. Activities are covered by the contacts scopes.
 
-Done: the modulith side is merged in `master` (`7b7065e8`, `0cad7d84`); the HubSpot app
-(`~/Documents/bulldozer/hubspot`, write scopes as `optionalScopes`) is uploaded as build #2 (2026-10-13) to the
-**test account** `Bulldozer_OS_test` (146651817), its Acceptable Use Policy signed. A read-only connection and a
-write connection were both tested end to end on that portal (2026-10-13).
+Done: the modulith side is merged in `master` (`7b7065e8`, `0cad7d84`) and deployed with `HUBSPOT_CLIENT_ID` /
+`HUBSPOT_SECRET`; the HubSpot app (`~/Documents/bulldozer/hubspot`, write scopes as `optionalScopes`) is uploaded as
+build #2 (2026-10-13) to the **test account** `Bulldozer_OS_test` (146651817), its Acceptable Use Policy signed. A
+read-only connection and a write connection were both tested end to end on that portal (2026-10-13).
 
-Still required:
-1. Deploy the modulith from `master`, with `HUBSPOT_CLIENT_ID` and `HUBSPOT_SECRET` (the test account's app, in
-   `backend/.keys.env` since 2026-10-12) in its environment.
-2. A portal connected read-only keeps the write scopes locked: HubSpot records them as disabled for the app, and a
-   portal admin must re-enable them in the app's admin settings (link in the consent screen) before reconnecting.
+Keep in mind: a portal connected read-only keeps the write scopes locked — HubSpot records them as disabled for the
+app, and a portal admin must re-enable them in the app's admin settings (link in the consent screen) before
+reconnecting.
 
 ## 3. HubSpot leads — one check left on a real portal
 
