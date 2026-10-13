@@ -120,8 +120,11 @@ public class HubSpotClient {
         var message = "HubSpot: " + this.message(e);
         return switch (e.getStatusCode().value()) {
             case 400, 422 -> new BadRequestException(message);
-            case 401, 403 -> new CrmAuthorizationException(
-                    message + " — reconnect HubSpot, or grant the missing scope to the Bulldozer app");
+            case 401 -> new CrmAuthorizationException(message + " — the token was revoked; reconnect HubSpot");
+            // The customer may have connected HubSpot without allowing Bulldozer to modify the CRM: the write scopes
+            // are optional, and this module never asks which ones were granted.
+            case 403 -> new CrmAuthorizationException(message
+                    + " — the connection lacks this access; reconnect HubSpot and allow Bulldozer to modify the CRM");
             case 404 -> new NotFoundException(message);
             case 409 -> new ConflictException(message);
             // 429 after the executor's retries, and anything unexpected: an upstream failure, answered 502.
