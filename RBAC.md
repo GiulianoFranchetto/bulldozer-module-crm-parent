@@ -14,7 +14,7 @@ Access rules of every **authenticated, non-internal** endpoint. The module expos
 | ✓ | Allowed |
 | *(empty)* | Denied |
 
-Every rule below comes from `security/DefaultAccessChecker.java` and the 35 per-endpoint checkers, each of
+Every rule below comes from `security/DefaultAccessChecker.java` and the 46 per-endpoint checkers, each of
 which extends it and adds nothing.
 
 **`BULLDOZER_OPS` is accepted since Bug 67** (2026-08-12). Before that, this module and `tracking` were the
@@ -61,6 +61,17 @@ project. `tracking` was aligned first; this module closes the gap.
 | `PUT /crm/{connectionId}/associations` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
 | `DELETE /crm/{connectionId}/associations` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
 | `POST /crm/{connectionId}/lead-list-imports` | ✓ | ✓ | ✓ | ✓ | Reads a lead list of the project (outbound, internal route), writes to the CRM |
+| `GET /crm/{connectionId}/landing-pages` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `GET /crm/{connectionId}/landing-pages/{id}` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `POST /crm/{connectionId}/landing-pages` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
+| `PATCH /crm/{connectionId}/landing-pages/{id}` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
+| `POST /crm/{connectionId}/landing-pages/{id}/publish` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM; publishes the page |
+| `DELETE /crm/{connectionId}/landing-pages/{id}` | ✓ | ✓ | ✓ | ✓ | Deletes the page in the CRM |
+| `GET /crm/{connectionId}/forms` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `GET /crm/{connectionId}/forms/{id}` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `POST /crm/{connectionId}/forms` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
+| `PATCH /crm/{connectionId}/forms/{id}` | ✓ | ✓ | ✓ | ✓ | Writes to the CRM |
+| `DELETE /crm/{connectionId}/forms/{id}` | ✓ | ✓ | ✓ | ✓ | Deletes the form in the CRM |
 
 **No endpoint carries `@FeatureNeeded`** — the module has no subscription gate. This is a deliberate, current
 decision: the CRM bridge is not on sale separately yet. Revisit when it is.

@@ -17,6 +17,15 @@ public final class CrmConstraints {
     /** Bound on a free-text field written to the CRM (HubSpot caps a note body at 65,536 characters). */
     public static final int LONG_TEXT = 65_536;
 
+    /** A language code, as the CRM takes it ({@code fr}, {@code en-us}). */
+    public static final int LANGUAGE = 16;
+
+    /** Bound on a URL written to the CRM. */
+    public static final int URL = 2048;
+
+    /** Upper bound on a form's fields. */
+    public static final int MAX_FORM_FIELDS = 50;
+
     /** An ISO 4217 currency code, as the CRM stores it: three uppercase letters. */
     public static final String CURRENCY = "[A-Z]{3}";
 

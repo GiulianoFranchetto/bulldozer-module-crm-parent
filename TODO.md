@@ -23,13 +23,13 @@ Done: the modulith side is merged in `master` (`7b7065e8`, `0cad7d84`) and deplo
 build #2 (2026-10-13) to the **test account** `Bulldozer_OS_test` (146651817), its Acceptable Use Policy signed. A
 read-only connection and a write connection were both tested end to end on that portal (2026-10-13).
 
-Still to do, for `POST /crm/{connectionId}/properties` (creating a property): a schema write scope per record type,
-optional like the other write scopes — `crm.schemas.contacts.write crm.schemas.companies.write
-crm.schemas.deals.write crm.schemas.calls.write crm.schemas.emails.write crm.schemas.meetings.write
-crm.schemas.notes.write crm.schemas.tasks.write` (all listed by HubSpot's create-property reference). The leads' one
-is not in that list: check whether `crm.schemas.leads.write` exists before asking for it.
-1. Add them to the app's `optionalScopes` and to the scopes the modulith asks for with `allowWrite`.
-2. Upload a new build of the app, and reconnect the test portal.
+Added on 2026-10-15, not yet live: the schema write scopes (`crm.schemas.<type>.write` for contacts, companies, deals,
+calls, emails, meetings, notes and tasks — creating a property) in `write-scopes`, and `content` (landing pages, Content
+Hub / Marketing Hub Pro only) and `forms` in `optional-scopes`: both cover reading and writing, so they are asked even
+without `allowWrite`. The modulith's `application.yaml` and the app's `app-hsmeta.json` carry them (uncommitted). The
+leads' schema scope is not in HubSpot's create-property reference: not asked.
+1. Commit and deploy the modulith.
+2. Upload the app as build #3 (`hs project upload` in `~/Documents/bulldozer/hubspot`), then reconnect the test portal.
 3. On that portal, create a contact `SELECT` property, find it with `GET …/properties?type=CRM_OBJECT_TYPE_CONTACT&name=…`,
    then create it again: HubSpot's duplicate answer is assumed to be a `409`, not yet seen.
 
@@ -55,7 +55,24 @@ import fails on reading the leads. Still to check on a portal: the note → comp
 (`HubSpotCrmGateway.NOTE_TO_COMPANY_ASSOCIATION_TYPE`; note → contact `202` is in HubSpot's notes guide), and the
 plural object names in the associations batch paths.
 
-## 5. Salesforce
+## 5. Landing pages and forms — to check on a portal
+
+The bodies sent to HubSpot are minimal: its specs mark nearly every field of a page and of a form as required
+(`configuration`, `displayOptions` and its `style`, a phone field's `validation`…), which a real create surely does not
+need. On the test portal (forms work on any tier; landing pages need Content Hub or Marketing Hub Pro):
+1. Create a draft landing page on a template of the portal's theme, read it, update its `htmlTitle`, publish it, then
+   delete it.
+2. Create a form with an email field, a `SELECT` field and `CRM_FORM_LEGAL_CONSENT_TYPE_NONE`, read it back, replace
+   its fields, then delete it. Also a phone field: no `validation` is sent.
+3. Check that a `PATCH` of a form's `configuration` (`language` only) keeps its `postSubmitAction`: HubSpot may replace
+   the whole nested object.
+4. Report every field HubSpot refuses here, and complete `HubSpotLandingPageMapper` / `HubSpotFormMapper` with the
+   documented defaults only.
+
+The forms API is a beta (`/marketing/forms/2027-03-beta`): follow HubSpot's changelog, and move to the first stable
+dated version once out.
+
+## 6. Salesforce
 
 `SalesforceCrmGateway` answers `501`, and `CrmConnectionFactory` refuses Salesforce connections. To implement:
 1. Add the Salesforce OAuth flow to the modulith (same places as HubSpot).
@@ -65,8 +82,11 @@ plural object names in the associations batch paths.
    through `RecordType.BusinessProcessId`; an org without record types needs a default container.
 4. Implement `SalesforceCrmGateway` against the REST API reference (no guessed paths), then lift the refusal in
    `CrmConnectionFactory`.
+5. Landing pages and forms stay `501` even then: on Salesforce they live in Account Engagement (Pardot), a separate
+   product with its own API and a `Pardot-Business-Unit-Id`. Its v5 reads landing pages, and reads and creates forms —
+   no update or delete documented for either.
 
-## 6. Frontend
+## 7. Frontend
 
 Found while testing on the HubSpot test portal (2026-10-13):
 1. Reconnecting HubSpot must only rerun the OAuth flow: deleting and re-registering the CRM connection deletes its
@@ -79,3 +99,7 @@ Found while testing on the HubSpot test portal (2026-10-13):
    there.
 5. Property creation (`POST …/properties`): the group select lists the distinct `groupName` of
    `GET …/properties?type=…`; options are asked for only with `CRM_PROPERTY_FIELD_TYPE_SELECT`.
+6. Landing pages and forms: a page's `content` is the CRM's own format (HubSpot `layoutSections` / `widgets`) — edit
+   it in HubSpot, or pass it through untouched; a form field's `name` picks from `GET …/properties`
+   (`CRM_OBJECT_TYPE_CONTACT` / `CRM_OBJECT_TYPE_COMPANY`); show `CRM_FORM_FIELD_TYPE_OTHER` fields read only, and
+   disable replacing the fields of a form holding one.

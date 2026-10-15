@@ -27,11 +27,16 @@ import com.bulldozer_collective.modules.crm.gateway.CrmStageOption;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageWrite;
 import com.bulldozer_collective.modules.crm.gateway.ListCrmObjectsBuilder;
 import com.bulldozer_collective.modules.crm.leads.services.CreateCrmLeadBuilder;
+import com.bulldozer_collective.modules.crm.api.CrmForm;
+import com.bulldozer_collective.modules.crm.api.CrmLandingPage;
+import com.bulldozer_collective.modules.crm.forms.services.SaveCrmFormBuilder;
+import com.bulldozer_collective.modules.crm.landingpages.services.SaveCrmLandingPageBuilder;
 import com.bulldozer_collective.shared.IntegrationPlatform;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +50,9 @@ import java.util.Set;
  */
 @Component
 public class SalesforceCrmGateway implements CrmGateway {
+
+    private static final String LANDING_PAGES = "landing pages";
+    private static final String FORMS = "forms";
 
     @Override
     public @NonNull IntegrationPlatform platform() {
@@ -291,7 +299,74 @@ public class SalesforceCrmGateway implements CrmGateway {
         throw notSupported();
     }
 
+    // Landing pages and forms are not in Salesforce's CRM but in Account Engagement (Pardot), a separate product with
+    // its own API, whose v5 only reads landing pages and reads and creates forms.
+
+    @Override
+    public @NonNull CrmPage<CrmLandingPage> listLandingPages(@NonNull CrmSession session,
+                                                             @Nullable String cursor,
+                                                             int limit) {
+        throw notSupported(LANDING_PAGES);
+    }
+
+    @Override
+    public @NonNull CrmLandingPage getLandingPage(@NonNull CrmSession session, @NonNull String id) {
+        throw notSupported(LANDING_PAGES);
+    }
+
+    @Override
+    public @NonNull String createLandingPage(@NonNull CrmSession session, @NonNull SaveCrmLandingPageBuilder page) {
+        throw notSupported(LANDING_PAGES);
+    }
+
+    @Override
+    public void updateLandingPage(@NonNull CrmSession session,
+                                  @NonNull String id,
+                                  @NonNull SaveCrmLandingPageBuilder page) {
+        throw notSupported(LANDING_PAGES);
+    }
+
+    @Override
+    public void publishLandingPage(@NonNull CrmSession session, @NonNull String id, @NonNull Instant at) {
+        throw notSupported(LANDING_PAGES);
+    }
+
+    @Override
+    public void deleteLandingPage(@NonNull CrmSession session, @NonNull String id) {
+        throw notSupported(LANDING_PAGES);
+    }
+
+    @Override
+    public @NonNull CrmPage<CrmForm> listForms(@NonNull CrmSession session, @Nullable String cursor, int limit) {
+        throw notSupported(FORMS);
+    }
+
+    @Override
+    public @NonNull CrmForm getForm(@NonNull CrmSession session, @NonNull String id) {
+        throw notSupported(FORMS);
+    }
+
+    @Override
+    public @NonNull String createForm(@NonNull CrmSession session, @NonNull SaveCrmFormBuilder form) {
+        throw notSupported(FORMS);
+    }
+
+    @Override
+    public void updateForm(@NonNull CrmSession session, @NonNull String id, @NonNull SaveCrmFormBuilder form) {
+        throw notSupported(FORMS);
+    }
+
+    @Override
+    public void deleteForm(@NonNull CrmSession session, @NonNull String id) {
+        throw notSupported(FORMS);
+    }
+
     private static UnsupportedOperationException notSupported() {
         return new UnsupportedOperationException("Salesforce is not supported yet");
+    }
+
+    private static UnsupportedOperationException notSupported(@NonNull String what) {
+        return new UnsupportedOperationException(("Salesforce: %s are not supported — on Salesforce they live in "
+                + "Account Engagement (Pardot), which the CRM bridge does not handle").formatted(what));
     }
 }

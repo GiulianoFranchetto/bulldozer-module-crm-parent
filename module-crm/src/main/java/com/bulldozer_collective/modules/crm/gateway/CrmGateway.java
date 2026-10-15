@@ -17,10 +17,15 @@ import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuil
 import com.bulldozer_collective.modules.crm.containers.services.CreateCrmPropertyBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
 import com.bulldozer_collective.modules.crm.leads.services.CreateCrmLeadBuilder;
+import com.bulldozer_collective.modules.crm.api.CrmForm;
+import com.bulldozer_collective.modules.crm.api.CrmLandingPage;
+import com.bulldozer_collective.modules.crm.forms.services.SaveCrmFormBuilder;
+import com.bulldozer_collective.modules.crm.landingpages.services.SaveCrmLandingPageBuilder;
 import com.bulldozer_collective.shared.IntegrationPlatform;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -146,6 +151,36 @@ public interface CrmGateway {
     void associate(@NonNull CrmSession session, @NonNull CrmObjectRef from, @NonNull CrmObjectRef to);
 
     void dissociate(@NonNull CrmSession session, @NonNull CrmObjectRef from, @NonNull CrmObjectRef to);
+
+    // ── landing pages ────────────────────────────────────────────────────────
+
+    /** The pages, without their {@code content}: a listing would otherwise carry every page's layout. */
+    @NonNull CrmPage<CrmLandingPage> listLandingPages(@NonNull CrmSession session, @Nullable String cursor, int limit);
+
+    @NonNull CrmLandingPage getLandingPage(@NonNull CrmSession session, @NonNull String id);
+
+    /** Creates the page as a draft. */
+    @NonNull String createLandingPage(@NonNull CrmSession session, @NonNull SaveCrmLandingPageBuilder page);
+
+    void updateLandingPage(@NonNull CrmSession session, @NonNull String id, @NonNull SaveCrmLandingPageBuilder page);
+
+    /** Publishes the page at {@code at}: scheduled when in the future, live otherwise. */
+    void publishLandingPage(@NonNull CrmSession session, @NonNull String id, @NonNull Instant at);
+
+    void deleteLandingPage(@NonNull CrmSession session, @NonNull String id);
+
+    // ── forms ────────────────────────────────────────────────────────────────
+
+    @NonNull CrmPage<CrmForm> listForms(@NonNull CrmSession session, @Nullable String cursor, int limit);
+
+    @NonNull CrmForm getForm(@NonNull CrmSession session, @NonNull String id);
+
+    @NonNull String createForm(@NonNull CrmSession session, @NonNull SaveCrmFormBuilder form);
+
+    /** Writes the non-null parts; {@code fields}, when given, replaces every field of the form. */
+    void updateForm(@NonNull CrmSession session, @NonNull String id, @NonNull SaveCrmFormBuilder form);
+
+    void deleteForm(@NonNull CrmSession session, @NonNull String id);
 
     // ── bulk, for imports ────────────────────────────────────────────────────
 

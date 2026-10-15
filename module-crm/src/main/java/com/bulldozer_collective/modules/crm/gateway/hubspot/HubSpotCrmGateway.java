@@ -34,6 +34,12 @@ import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotPipeline;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotProperty;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotResults;
 import com.bulldozer_collective.modules.crm.leads.services.CreateCrmLeadBuilder;
+import com.bulldozer_collective.modules.crm.api.CrmForm;
+import com.bulldozer_collective.modules.crm.api.CrmLandingPage;
+import com.bulldozer_collective.modules.crm.forms.services.SaveCrmFormBuilder;
+import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotForm;
+import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotPage;
+import com.bulldozer_collective.modules.crm.landingpages.services.SaveCrmLandingPageBuilder;
 import com.bulldozer_collective.shared.IntegrationPlatform;
 import com.bulldozer_collective.shared.exceptions.BadRequestException;
 import com.bulldozer_collective.shared.exceptions.ConflictException;
@@ -45,6 +51,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.type.TypeReference;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -75,6 +82,15 @@ public class HubSpotCrmGateway implements CrmGateway {
     private static final TypeReference<HubSpotResults<HubSpotObject>> OBJECTS = new TypeReference<>() {};
     private static final TypeReference<HubSpotObject> OBJECT = new TypeReference<>() {};
     private static final TypeReference<HubSpotResults<HubSpotPipeline>> PIPELINES = new TypeReference<>() {};
+    private static final TypeReference<HubSpotResults<HubSpotPage>> PAGES = new TypeReference<>() {};
+    private static final TypeReference<HubSpotPage> PAGE = new TypeReference<>() {};
+    private static final TypeReference<HubSpotResults<HubSpotForm>> FORMS = new TypeReference<>() {};
+    private static final TypeReference<HubSpotForm> FORM = new TypeReference<>() {};
+    private static final TypeReference<Map<String, Object>> ANY = new TypeReference<>() {};
+    /** The pages API is dated like the CRM's. */
+    private static final List<String> LANDING_PAGES = List.of("cms", "pages", API_VERSION, "landing-pages");
+    /** The forms API has no stable dated version yet: its newest is a beta. */
+    private static final List<String> FORMS_PATH = List.of("marketing", "forms", "2027-03-beta");
     private static final TypeReference<HubSpotProperty> PROPERTY = new TypeReference<>() {};
     private static final TypeReference<HubSpotResults<HubSpotProperty>> PROPERTIES = new TypeReference<>() {};
     private static final TypeReference<HubSpotBatchResponse<HubSpotObject>> BATCH_OBJECTS = new TypeReference<>() {};
@@ -350,6 +366,125 @@ public class HubSpotCrmGateway implements CrmGateway {
         this.clientFactory.create(session).call(HttpMethod.DELETE, List.of(
                 "crm", "objects", API_VERSION, HubSpotObjectTypes.singular(from.type()), from.id(),
                 "associations", HubSpotObjectTypes.singular(to.type()), to.id()));
+    }
+
+    // ── landing pages ────────────────────────────────────────────────────────
+
+    @Override
+    public @NonNull CrmPage<CrmLandingPage> listLandingPages(@NonNull CrmSession session,
+                                                             @Nullable String cursor,
+                                                             int limit) {
+        var response = this.clientFactory.create(session).get(LANDING_PAGES, paging(cursor, limit), PAGES);
+        var items = results(response).stream()
+                .filter(page -> page.id() != null)
+                .map(page -> HubSpotLandingPageMapper.page(page, false))
+                .toList();
+        return new CrmPage<>(items, nextCursor(response));
+    }
+
+    @Override
+    public @NonNull CrmLandingPage getLandingPage(@NonNull CrmSession session, @NonNull String id) {
+        var page = this.clientFactory.create(session).get(append(LANDING_PAGES, id), Map.of(), PAGE);
+        if (page == null || page.id() == null) {
+            throw new CrmUpstreamException("HubSpot answered a landing page without an id");
+        }
+        return HubSpotLandingPageMapper.page(page, true);
+    }
+
+    @Override
+    public @NonNull String createLandingPage(@NonNull CrmSession session, @NonNull SaveCrmLandingPageBuilder page) {
+        var created = this.clientFactory.create(session)
+                .send(HttpMethod.POST, LANDING_PAGES, HubSpotLandingPageMapper.page(page, true), PAGE);
+        if (created == null || created.id() == null) {
+            throw new CrmUpstreamException("HubSpot answered a create without an id");
+        }
+        return created.id();
+    }
+
+    @Override
+    public void updateLandingPage(@NonNull CrmSession session,
+                                  @NonNull String id,
+                                  @NonNull SaveCrmLandingPageBuilder page) {
+        this.clientFactory.create(session)
+                .send(HttpMethod.PATCH, append(LANDING_PAGES, id), HubSpotLandingPageMapper.page(page, false), PAGE);
+    }
+
+    /** HubSpot publishes through its schedule: a date already past publishes the page at once. */
+    @Override
+    public void publishLandingPage(@NonNull CrmSession session, @NonNull String id, @NonNull Instant at) {
+        this.clientFactory.create(session).send(HttpMethod.POST, append(LANDING_PAGES, "schedule"),
+                Map.of("id", id, "publishDate", at.toString()), ANY);
+    }
+
+    @Override
+    public void deleteLandingPage(@NonNull CrmSession session, @NonNull String id) {
+        this.clientFactory.create(session).call(HttpMethod.DELETE, append(LANDING_PAGES, id));
+    }
+
+    // ── forms ────────────────────────────────────────────────────────────────
+
+    /** HubSpot forms only: pop-ups, blog comment forms and forms captured from other sites are left out. */
+    @Override
+    public @NonNull CrmPage<CrmForm> listForms(@NonNull CrmSession session, @Nullable String cursor, int limit) {
+        var params = paging(cursor, limit);
+        params.put("formTypes", "hubspot");
+        var response = this.clientFactory.create(session).get(FORMS_PATH, params, FORMS);
+        var items = results(response).stream()
+                .filter(form -> form.id() != null)
+                .map(HubSpotFormMapper::form)
+                .toList();
+        return new CrmPage<>(items, nextCursor(response));
+    }
+
+    @Override
+    public @NonNull CrmForm getForm(@NonNull CrmSession session, @NonNull String id) {
+        var form = this.clientFactory.create(session).get(append(FORMS_PATH, id), Map.of(), FORM);
+        if (form == null || form.id() == null) {
+            throw new CrmUpstreamException("HubSpot answered a form without an id");
+        }
+        return HubSpotFormMapper.form(form);
+    }
+
+    @Override
+    public @NonNull String createForm(@NonNull CrmSession session, @NonNull SaveCrmFormBuilder form) {
+        var created = this.clientFactory.create(session)
+                .send(HttpMethod.POST, FORMS_PATH, HubSpotFormMapper.form(form, true), FORM);
+        if (created == null || created.id() == null) {
+            throw new CrmUpstreamException("HubSpot answered a create without an id");
+        }
+        return created.id();
+    }
+
+    @Override
+    public void updateForm(@NonNull CrmSession session, @NonNull String id, @NonNull SaveCrmFormBuilder form) {
+        this.clientFactory.create(session)
+                .send(HttpMethod.PATCH, append(FORMS_PATH, id), HubSpotFormMapper.form(form, false), FORM);
+    }
+
+    @Override
+    public void deleteForm(@NonNull CrmSession session, @NonNull String id) {
+        this.clientFactory.create(session).call(HttpMethod.DELETE, append(FORMS_PATH, id));
+    }
+
+    private static @NonNull Map<String, String> paging(@Nullable String cursor, int limit) {
+        var params = new HashMap<String, String>();
+        params.put("limit", String.valueOf(limit));
+        if (cursor != null) {
+            params.put("after", cursor);
+        }
+        return params;
+    }
+
+    private static @Nullable String nextCursor(@Nullable HubSpotResults<?> response) {
+        return response != null && response.paging() != null && response.paging().next() != null
+                ? response.paging().next().after()
+                : null;
+    }
+
+    private static @NonNull List<String> append(@NonNull List<String> path, @NonNull String segment) {
+        var segments = new ArrayList<>(path);
+        segments.add(segment);
+        return segments;
     }
 
     // ── bulk, for imports ────────────────────────────────────────────────────

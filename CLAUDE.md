@@ -23,11 +23,12 @@ profile (`dev` / `prod` set the datasource).
 - `crm-api` — the HTTP contract (requests, responses, `*Param` query records, enums), shared with consumers. Never
   passed to a service: controllers map it onto `*Builder` records.
 - `module-crm` — one package per domain (`connections`, `containers`, `contacts`, `companies`, `deals`, `leads`,
-  `activities`, `associations`, `imports`), each split into `controllers` / `security` / `services`, plus `gateway`.
+  `activities`, `associations`, `imports`, `landingpages`, `forms`), each split into `controllers` / `security` /
+  `services`, plus `gateway`.
 
 # Access control
 `security/DefaultAccessChecker` grants access to `BULLDOZER_ADMINISTRATOR`, `BULLDOZER_OPS`, the target
-customer's administrator, then any project membership — aligned on the rest of the fleet since Bug 67. The 35
+customer's administrator, then any project membership — aligned on the rest of the fleet since Bug 67. The 46
 per-endpoint checkers are pure `super.checkAccess(context)` pass-throughs, and no endpoint carries
 `@FeatureNeeded`. Full table in `RBAC.md`, to keep in sync whenever an endpoint or a checker changes.
 
@@ -50,7 +51,10 @@ No CRM call may run inside a `@Transactional` method.
   enumerated, writable one); its values are the container's stages, each mapped to a `CrmDealStage` /
   `CrmLeadStage`. `CrmStageSources` reads and validates a source; `CrmStageTable` translates both ways. Creating in
   a custom-source container also needs the caller's `pipelineStage`.
-- **No delete** of CRM records: only configuration and associations can be removed.
+- **No delete** of CRM records: only configuration and associations can be removed. Landing pages and forms are
+  content, not records: they are deleted. Their HubSpot APIs are the pages API (`2026-09`, scope `content`) and the
+  forms API `2027-03-beta` (scope `forms`), which has no stable dated version; Salesforce keeps them in Account
+  Engagement, which the bridge does not handle (501).
 
 # Contract
 Any change to an endpoint's contract also updates `~/Documents/bulldozer/ai/bulldozer-api-docs/CRM_API.md` and,
