@@ -23,15 +23,17 @@ Done: the modulith side is merged in `master` (`7b7065e8`, `0cad7d84`) and deplo
 build #2 (2026-10-13) to the **test account** `Bulldozer_OS_test` (146651817), its Acceptable Use Policy signed. A
 read-only connection and a write connection were both tested end to end on that portal (2026-10-13).
 
-Added on 2026-10-15, not yet live: the schema write scopes (`crm.schemas.<type>.write` for contacts, companies, deals,
-calls, emails, meetings, notes and tasks — creating a property) in `write-scopes`, and `content` (landing pages, Content
+Added on 2026-10-15, not yet live: the schema write scopes (`crm.schemas.<type>.write` for contacts, companies and deals —
+creating a property; HubSpot refuses those of calls, emails, meetings, notes and tasks to public apps) in `write-scopes`, and `content` (landing pages, Content
 Hub / Marketing Hub Pro only) and `forms` in `optional-scopes`: both cover reading and writing, so they are asked even
 without `allowWrite`. The modulith's `application.yaml` and the app's `app-hsmeta.json` carry them (uncommitted). The
 leads' schema scope is not in HubSpot's create-property reference: not asked.
 1. Commit and deploy the modulith.
-2. Upload the app as build #3 (`hs project upload` in `~/Documents/bulldozer/hubspot`), then reconnect the test portal.
+2. Done: build #5 deployed to the test account (2026-10-15). Reconnect the test portal.
 3. On that portal, create a contact `SELECT` property, find it with `GET …/properties?type=CRM_OBJECT_TYPE_CONTACT&name=…`,
    then create it again: HubSpot's duplicate answer is assumed to be a `409`, not yet seen.
+4. Create a property on a note (`CRM_OBJECT_TYPE_NOTE`): HubSpot's reference lists its schema scopes as alternatives,
+   so `crm.schemas.contacts.write` may be enough; otherwise it answers `424`.
 
 Keep in mind: a portal connected read-only keeps the write scopes locked — HubSpot records them as disabled for the
 app, and a portal admin must re-enable them in the app's admin settings (link in the consent screen) before
