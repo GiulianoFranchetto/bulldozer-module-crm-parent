@@ -15,6 +15,7 @@ import com.bulldozer_collective.modules.crm.api.CrmProperty;
 import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBuilder;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
+import com.bulldozer_collective.modules.crm.containers.services.CreateCrmPropertyBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
 import com.bulldozer_collective.modules.crm.gateway.CrmBulkResult;
 import com.bulldozer_collective.modules.crm.gateway.CrmContainedRecord;
@@ -114,6 +115,12 @@ public class SalesforceCrmGateway implements CrmGateway {
     @Override
     public @NonNull List<CrmProperty> listProperties(@NonNull CrmSession session,
                                                      @NonNull CrmObjectType type) {
+        throw notSupported();
+    }
+
+    @Override
+    public @NonNull CrmProperty createProperty(@NonNull CrmSession session,
+                                               @NonNull CreateCrmPropertyBuilder property) {
         throw notSupported();
     }
 

@@ -15,6 +15,7 @@ import com.bulldozer_collective.modules.crm.api.CrmProperty;
 import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBuilder;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
+import com.bulldozer_collective.modules.crm.containers.services.CreateCrmPropertyBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
 import com.bulldozer_collective.modules.crm.gateway.CrmBulkResult;
 import com.bulldozer_collective.modules.crm.gateway.CrmContainedRecord;
@@ -74,6 +75,7 @@ public class HubSpotCrmGateway implements CrmGateway {
     private static final TypeReference<HubSpotResults<HubSpotObject>> OBJECTS = new TypeReference<>() {};
     private static final TypeReference<HubSpotObject> OBJECT = new TypeReference<>() {};
     private static final TypeReference<HubSpotResults<HubSpotPipeline>> PIPELINES = new TypeReference<>() {};
+    private static final TypeReference<HubSpotProperty> PROPERTY = new TypeReference<>() {};
     private static final TypeReference<HubSpotResults<HubSpotProperty>> PROPERTIES = new TypeReference<>() {};
     private static final TypeReference<HubSpotBatchResponse<HubSpotObject>> BATCH_OBJECTS = new TypeReference<>() {};
     private static final TypeReference<HubSpotBatchResponse<HubSpotAssociationRow>> BATCH_ASSOCIATIONS =
@@ -187,6 +189,14 @@ public class HubSpotCrmGateway implements CrmGateway {
                 .map(HubSpotMapper::property)
                 .sorted(Comparator.comparing(CrmProperty::label, String.CASE_INSENSITIVE_ORDER))
                 .toList();
+    }
+
+    @Override
+    public @NonNull CrmProperty createProperty(@NonNull CrmSession session, @NonNull CreateCrmPropertyBuilder property) {
+        var created = this.clientFactory.create(session).send(HttpMethod.POST,
+                List.of("crm", "properties", API_VERSION, HubSpotObjectTypes.plural(property.objectType())),
+                HubSpotMapper.property(property), PROPERTY);
+        return HubSpotMapper.property(Objects.requireNonNull(created));
     }
 
     /**

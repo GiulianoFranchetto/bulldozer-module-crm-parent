@@ -27,7 +27,7 @@ profile (`dev` / `prod` set the datasource).
 
 # Access control
 `security/DefaultAccessChecker` grants access to `BULLDOZER_ADMINISTRATOR`, `BULLDOZER_OPS`, the target
-customer's administrator, then any project membership — aligned on the rest of the fleet since Bug 67. The 34
+customer's administrator, then any project membership — aligned on the rest of the fleet since Bug 67. The 35
 per-endpoint checkers are pure `super.checkAccess(context)` pass-throughs, and no endpoint carries
 `@FeatureNeeded`. Full table in `RBAC.md`, to keep in sync whenever an endpoint or a checker changes.
 

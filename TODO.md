@@ -23,6 +23,16 @@ Done: the modulith side is merged in `master` (`7b7065e8`, `0cad7d84`) and deplo
 build #2 (2026-10-13) to the **test account** `Bulldozer_OS_test` (146651817), its Acceptable Use Policy signed. A
 read-only connection and a write connection were both tested end to end on that portal (2026-10-13).
 
+Still to do, for `POST /crm/{connectionId}/properties` (creating a property): a schema write scope per record type,
+optional like the other write scopes — `crm.schemas.contacts.write crm.schemas.companies.write
+crm.schemas.deals.write crm.schemas.calls.write crm.schemas.emails.write crm.schemas.meetings.write
+crm.schemas.notes.write crm.schemas.tasks.write` (all listed by HubSpot's create-property reference). The leads' one
+is not in that list: check whether `crm.schemas.leads.write` exists before asking for it.
+1. Add them to the app's `optionalScopes` and to the scopes the modulith asks for with `allowWrite`.
+2. Upload a new build of the app, and reconnect the test portal.
+3. On that portal, create a contact `SELECT` property, find it with `GET …/properties?type=CRM_OBJECT_TYPE_CONTACT&name=…`,
+   then create it again: HubSpot's duplicate answer is assumed to be a `409`, not yet seen.
+
 Keep in mind: a portal connected read-only keeps the write scopes locked — HubSpot records them as disabled for the
 app, and a portal admin must re-enable them in the app's admin settings (link in the consent screen) before
 reconnecting.
@@ -67,3 +77,5 @@ Found while testing on the HubSpot test portal (2026-10-13):
 4. Contact creation offers `legalBasis` — the options of `hs_legal_basis` (`GET …/properties?type=CRM_OBJECT_TYPE_CONTACT&name=hs_legal_basis`),
    field hidden when the portal has no such property. Not yet checked: what a portal without GDPR features answers
    there.
+5. Property creation (`POST …/properties`): the group select lists the distinct `groupName` of
+   `GET …/properties?type=…`; options are asked for only with `CRM_PROPERTY_FIELD_TYPE_SELECT`.

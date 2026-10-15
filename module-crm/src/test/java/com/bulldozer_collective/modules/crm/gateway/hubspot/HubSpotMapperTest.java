@@ -3,7 +3,10 @@ package com.bulldozer_collective.modules.crm.gateway.hubspot;
 import com.bulldozer_collective.modules.crm.activities.services.CreateCrmActivityBuilder;
 import com.bulldozer_collective.modules.crm.api.CrmActivityType;
 import com.bulldozer_collective.modules.crm.api.CrmLeadStage;
+import com.bulldozer_collective.modules.crm.api.CrmObjectType;
+import com.bulldozer_collective.modules.crm.api.CrmPropertyFieldType;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
+import com.bulldozer_collective.modules.crm.containers.services.CreateCrmPropertyBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
 import com.bulldozer_collective.modules.crm.gateway.CrmStageWrite;
 import com.bulldozer_collective.modules.crm.gateway.hubspot.dto.HubSpotObject;
@@ -126,5 +129,44 @@ class HubSpotMapperTest {
                 .containsEntry("hs_timestamp", "2026-10-09T10:00:00Z")
                 .containsEntry("hs_task_subject", "Send the quote")
                 .containsEntry("hs_task_status", "NOT_STARTED");
+    }
+
+    @Test
+    @DisplayName("a dropdown property is created as an enumeration, its options numbered in the order given")
+    void selectPropertyBody() {
+        var body = HubSpotMapper.property(propertyBuilder(CrmPropertyFieldType.CRM_PROPERTY_FIELD_TYPE_SELECT, List.of(
+                new CreateCrmPropertyBuilder.Option("Lemlist", "lemlist"),
+                new CreateCrmPropertyBuilder.Option("Instantly", "instantly"))));
+
+        assertThat(body).containsEntry("name", "bdz_lead_source")
+                .containsEntry("groupName", "contactinformation")
+                .containsEntry("type", "enumeration")
+                .containsEntry("fieldType", "select")
+                .doesNotContainKey("description");
+        assertThat(body.get("options")).isEqualTo(List.of(
+                Map.of("label", "Lemlist", "value", "lemlist", "displayOrder", 0, "hidden", false),
+                Map.of("label", "Instantly", "value", "instantly", "displayOrder", 1, "hidden", false)));
+    }
+
+    @Test
+    @DisplayName("a checkbox property is a HubSpot bool, sent without options")
+    void checkboxPropertyBody() {
+        var body = HubSpotMapper.property(propertyBuilder(CrmPropertyFieldType.CRM_PROPERTY_FIELD_TYPE_CHECKBOX, List.of()));
+
+        assertThat(body).containsEntry("type", "bool")
+                .containsEntry("fieldType", "booleancheckbox")
+                .doesNotContainKey("options");
+    }
+
+    private static CreateCrmPropertyBuilder propertyBuilder(CrmPropertyFieldType fieldType,
+                                                            List<CreateCrmPropertyBuilder.Option> options) {
+        return CreateCrmPropertyBuilder.builder()
+                .objectType(CrmObjectType.CRM_OBJECT_TYPE_CONTACT)
+                .name("bdz_lead_source")
+                .label("Lead source")
+                .groupName("contactinformation")
+                .fieldType(fieldType)
+                .options(options)
+                .build();
     }
 }

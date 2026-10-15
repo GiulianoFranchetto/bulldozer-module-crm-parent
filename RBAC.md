@@ -14,7 +14,7 @@ Access rules of every **authenticated, non-internal** endpoint. The module expos
 | ✓ | Allowed |
 | *(empty)* | Denied |
 
-Every rule below comes from `security/DefaultAccessChecker.java` and the 34 per-endpoint checkers, each of
+Every rule below comes from `security/DefaultAccessChecker.java` and the 35 per-endpoint checkers, each of
 which extends it and adds nothing.
 
 **`BULLDOZER_OPS` is accepted since Bug 67** (2026-08-12). Before that, this module and `tracking` were the
@@ -31,6 +31,7 @@ project. `tracking` was aligned first; this module closes the gap.
 | `GET /crm/connections/{connectionId}` | ✓ | ✓ | ✓ | ✓ |  |
 | `DELETE /crm/connections/{connectionId}` | ✓ | ✓ | ✓ | ✓ | Deletes its containers and stages too |
 | `GET /crm/{connectionId}/properties` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
+| `POST /crm/{connectionId}/properties` | ✓ | ✓ | ✓ | ✓ | Calls the CRM; changes the portal's schema |
 | `POST /crm/{connectionId}/containers` | ✓ | ✓ | ✓ | ✓ | Calls the CRM; imports several containers in one transaction |
 | `GET /crm/{connectionId}/containers` | ✓ | ✓ | ✓ | ✓ | Calls the CRM |
 | `GET /crm/{connectionId}/containers/{containerId}` | ✓ | ✓ | ✓ | ✓ |  |

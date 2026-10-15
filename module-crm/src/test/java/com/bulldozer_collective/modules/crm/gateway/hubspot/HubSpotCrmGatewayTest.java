@@ -61,7 +61,7 @@ class HubSpotCrmGatewayTest {
     }
 
     private static HubSpotProperty property(String name, boolean readOnly) {
-        return new HubSpotProperty(name, name, "enumeration", "select", false, false,
+        return new HubSpotProperty(name, name, "enumeration", "select", "dealinformation", false, false,
                 new HubSpotModificationMetadata(readOnly),
                 List.of(new HubSpotPropertyOption("Demo", "demo", 0, false),
                         new HubSpotPropertyOption("Signed", "signed", 1, false)));

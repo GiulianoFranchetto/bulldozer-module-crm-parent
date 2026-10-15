@@ -13,6 +13,7 @@ import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainer;
 import com.bulldozer_collective.modules.crm.gateway.CrmRemoteContainerStage;
 import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBuilder;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
+import com.bulldozer_collective.modules.crm.containers.services.CreateCrmPropertyBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
 import com.bulldozer_collective.modules.crm.gateway.CrmContainedRecord;
 import com.bulldozer_collective.modules.crm.gateway.CrmNote;
@@ -161,6 +162,7 @@ final class HubSpotMapper {
                 .label(property.label() == null ? name : property.label())
                 .type(property.type() == null ? "string" : property.type())
                 .fieldType(property.fieldType())
+                .groupName(property.groupName())
                 .readOnly(property.modificationMetadata() != null
                         && Boolean.TRUE.equals(property.modificationMetadata().readOnlyValue()))
                 .options(options)
@@ -168,6 +170,42 @@ final class HubSpotMapper {
     }
 
     // ── write ────────────────────────────────────────────────────────────────
+
+    /**
+     * The body of a property creation: each field type is one of HubSpot's {@code type} / {@code fieldType} pairs. A
+     * checkbox takes no options — its values are {@code true} and {@code false}.
+     */
+    static @NonNull Map<String, Object> property(@NonNull CreateCrmPropertyBuilder property) {
+        var body = new LinkedHashMap<String, Object>();
+        body.put("name", property.name());
+        body.put("label", property.label());
+        body.put("groupName", property.groupName());
+        switch (property.fieldType()) {
+            case CRM_PROPERTY_FIELD_TYPE_TEXT -> putType(body, "string", "text");
+            case CRM_PROPERTY_FIELD_TYPE_TEXTAREA -> putType(body, "string", "textarea");
+            case CRM_PROPERTY_FIELD_TYPE_NUMBER -> putType(body, "number", "number");
+            case CRM_PROPERTY_FIELD_TYPE_DATE -> putType(body, "date", "date");
+            case CRM_PROPERTY_FIELD_TYPE_CHECKBOX -> putType(body, "bool", "booleancheckbox");
+            case CRM_PROPERTY_FIELD_TYPE_SELECT -> putType(body, "enumeration", "select");
+        }
+        if (property.description() != null) {
+            body.put("description", property.description());
+        }
+        if (!property.options().isEmpty()) {
+            var options = new ArrayList<Map<String, Object>>();
+            for (var i = 0; i < property.options().size(); i++) {
+                var option = property.options().get(i);
+                options.add(Map.of("label", option.label(), "value", option.value(), "displayOrder", i, "hidden", false));
+            }
+            body.put("options", options);
+        }
+        return body;
+    }
+
+    private static void putType(@NonNull Map<String, Object> body, @NonNull String type, @NonNull String fieldType) {
+        body.put("type", type);
+        body.put("fieldType", fieldType);
+    }
 
     static @NonNull Map<String, String> contact(@NonNull SaveCrmContactBuilder contact) {
         var properties = new LinkedHashMap<String, String>();

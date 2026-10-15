@@ -14,6 +14,7 @@ import com.bulldozer_collective.modules.crm.api.CrmPage;
 import com.bulldozer_collective.modules.crm.api.CrmProperty;
 import com.bulldozer_collective.modules.crm.companies.services.SaveCrmCompanyBuilder;
 import com.bulldozer_collective.modules.crm.contacts.services.SaveCrmContactBuilder;
+import com.bulldozer_collective.modules.crm.containers.services.CreateCrmPropertyBuilder;
 import com.bulldozer_collective.modules.crm.deals.services.SaveCrmDealBuilder;
 import com.bulldozer_collective.modules.crm.leads.services.CreateCrmLeadBuilder;
 import com.bulldozer_collective.shared.IntegrationPlatform;
@@ -74,6 +75,9 @@ public interface CrmGateway {
      * options of a field such as the legal basis.
      */
     @NonNull List<CrmProperty> listProperties(@NonNull CrmSession session, @NonNull CrmObjectType type);
+
+    /** Creates the property on every record of its type, and answers it as the CRM now lists it. */
+    @NonNull CrmProperty createProperty(@NonNull CrmSession session, @NonNull CreateCrmPropertyBuilder property);
 
     /**
      * The values {@code propertyName} can take in the container — empty when the property is free-form.
