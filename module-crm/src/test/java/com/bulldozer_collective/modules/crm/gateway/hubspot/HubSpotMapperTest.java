@@ -47,6 +47,22 @@ class HubSpotMapperTest {
     }
 
     @Test
+    @DisplayName("a contact carries its last website visit and last marketing e-mail open and click, null when absent")
+    void contactEngagement() {
+        var properties = new HashMap<String, String>();
+        properties.put(HubSpotMapper.CONTACT_LAST_VISIT, "2026-11-15T14:37:00Z");
+        properties.put(HubSpotMapper.CONTACT_LAST_EMAIL_OPEN, "1763227680000");
+
+        var contact = HubSpotMapper.contact(new HubSpotObject("51", properties, null, null));
+
+        assertThat(contact.lastVisitAt()).isEqualTo(Instant.parse("2026-11-15T14:37:00Z"));
+        assertThat(contact.lastEmailOpenAt()).isEqualTo(Instant.ofEpochMilli(1763227680000L));
+        assertThat(contact.lastEmailClickAt()).isNull();
+        assertThat(HubSpotMapper.CONTACT_PROPERTIES).contains(HubSpotMapper.CONTACT_LAST_VISIT,
+                HubSpotMapper.CONTACT_LAST_EMAIL_OPEN, HubSpotMapper.CONTACT_LAST_EMAIL_CLICK);
+    }
+
+    @Test
     @DisplayName("a contact's legal basis is written to hs_legal_basis, and nothing when absent")
     void contactLegalBasis() {
         var withBasis = HubSpotMapper.contact(SaveCrmContactBuilder.builder()

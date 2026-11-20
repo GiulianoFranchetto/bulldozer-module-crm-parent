@@ -42,7 +42,14 @@ import java.util.Objects;
  */
 final class HubSpotMapper {
 
-    static final List<String> CONTACT_PROPERTIES = List.of("firstname", "lastname", "email", "phone", "jobtitle");
+    /** The last visit of the website, as HubSpot's tracking code saw it. */
+    static final String CONTACT_LAST_VISIT = "hs_analytics_last_visit_timestamp";
+    /** The last open of a HubSpot marketing e-mail. */
+    static final String CONTACT_LAST_EMAIL_OPEN = "hs_email_last_open_date";
+    /** The last click in a HubSpot marketing e-mail. */
+    static final String CONTACT_LAST_EMAIL_CLICK = "hs_email_last_click_date";
+    static final List<String> CONTACT_PROPERTIES = List.of("firstname", "lastname", "email", "phone", "jobtitle",
+            CONTACT_LAST_VISIT, CONTACT_LAST_EMAIL_OPEN, CONTACT_LAST_EMAIL_CLICK);
     static final List<String> COMPANY_PROPERTIES = List.of("name", "domain", "industry", "phone", "city", "country");
     static final List<String> DEAL_PROPERTIES = List.of(
             "dealname", "amount", "deal_currency_code", "closedate", HubSpotContainerKind.DEALS.pipelineProperty());
@@ -64,6 +71,9 @@ final class HubSpotMapper {
                 .email(properties.get("email"))
                 .phone(properties.get("phone"))
                 .jobTitle(properties.get("jobtitle"))
+                .lastVisitAt(instant(properties.get(CONTACT_LAST_VISIT)))
+                .lastEmailOpenAt(instant(properties.get(CONTACT_LAST_EMAIL_OPEN)))
+                .lastEmailClickAt(instant(properties.get(CONTACT_LAST_EMAIL_CLICK)))
                 .createdAt(object.createdAt())
                 .updatedAt(object.updatedAt())
                 .build();
